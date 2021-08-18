@@ -4,6 +4,7 @@ import './index.css';
 import Wrapper from './Wrapper'
 import "@fontsource/roboto";
 import "firebase/auth";
+require("dotenv").config();
 
 ReactDOM.render(
   <React.StrictMode>
