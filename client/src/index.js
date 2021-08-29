@@ -1,14 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import Wrapper from './Wrapper'
+import App from './App';
 import "@fontsource/roboto";
-import "firebase/auth";
-require("dotenv").config();
 
 ReactDOM.render(
   <React.StrictMode>
-     <Wrapper />
+     <App />
   </React.StrictMode>,
   document.getElementById('root')
 );
+
