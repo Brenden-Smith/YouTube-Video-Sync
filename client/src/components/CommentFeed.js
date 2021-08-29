@@ -112,10 +112,6 @@ function CommentCard(props) {
 
 export default withStyles( { withTheme: true })(
     class CommentFeed extends Component {
-        constructor() {
-            super();
-        }
-
         render() {
 
             return (
