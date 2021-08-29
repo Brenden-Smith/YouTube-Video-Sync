@@ -77,7 +77,7 @@ function QueueCard(props) {
             </Grid>
             <Grid item xs={3} align="left">
                 <Container className={classes.thumbnail}>
-                    {props.video.thumbnail===null ? null : <img src={props.video.thumbnail} style={{height: '100%', width: '100%'}}/>}
+                    {props.video.thumbnail===null ? null : <img src={props.video.thumbnail} style={{height: '100%', width: '100%'}} alt="thumbnail"/>}
                 </Container>
             </Grid>
             <Grid item xs={8} align="left">
@@ -94,9 +94,6 @@ function QueueCard(props) {
 }
 
 export default class QueueFeed extends Component {
-    constructor() {
-        super();
-    }
 
     render() {
         return (
