@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import GoogleLogo from "../assets/icons/GoogleLogo";
 
 // Components
-import { Button, CircularProgress, Container, Grid, makeStyles, Paper, Typography } from "@material-ui/core";
+import { Button, CircularProgress, Grid, makeStyles, Paper, Typography } from "@material-ui/core";
 
 // Firebase
 import fb from "firebase/app";
