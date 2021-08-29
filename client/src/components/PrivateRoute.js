@@ -1,7 +1,7 @@
 import React from "react";
 import { Redirect, Route } from "react-router-dom";
 
-import firebase from "../firebase";
+import firebase from "../auth/firebase";
 import "firebase/auth";
 import { useAuthState } from "react-firebase-hooks/auth";
 
