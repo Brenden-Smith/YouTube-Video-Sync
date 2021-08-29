@@ -1,19 +1,8 @@
 import React, { Component } from "react";
 import { withStyles } from "@material-ui/core/styles";
-import {
-  Avatar,
-  Box,
-  Button,
-  Container,
-  Divider,
-  Grid,
-  Typography,
-} from "@material-ui/core";
-
-import NavBar from "../components/NavBar";
-import CommentFeed from "../components/CommentFeed";
-import QueueFeed from "../components/QueueFeed";
-import Video from "../components/Video";
+import { Button, Container, Divider, Grid } from "@material-ui/core";
+import { NavBar, CommentFeed, QueueFeed, VideoPlayer, VideoDetails } from "../components";
+import { Video } from '../models';
 
 const styles = (theme) => ({
   root: {
@@ -45,10 +34,15 @@ const styles = (theme) => ({
     width: "64px",
   },
   video: {
-    backgroundColor: "black",
     width: "75%",
-    height: "500px",
   },
+});
+
+const testVideo = new Video({
+  creator: "Tom Scott",
+  creator_photo: "https://yt3.ggpht.com/ytc/AKedOLTn7ljFVHlZoPxxekAfuIzfhFPKhBblpYYHhaR4pQ=s88-c-k-c0x00ffffff-no-rj",
+  src: "https://www.youtube.com/embed/LZM9YdO_QKk",
+  title: "The Consequences of Your Code"
 });
 
 export default withStyles(styles, { withTheme: true })(
@@ -71,48 +65,28 @@ export default withStyles(styles, { withTheme: true })(
             alignItems="center"
             className={classes.grid}
             justify="center"
+            spacing={2}
           >
-            <Grid item xs={12} md={7}>
-              <Grid item className={classes.video}>
-                <Video />
-              </Grid>
-              <div style={{ height: "15px" }} />
-              <Grid item align="left" style={{ width: "75%" }} spacing={2}>
-                <Grid container direction="row" spacing={2}>
-                  <Grid item>
-                    <Avatar
-                      style={{
-                        background: theme.palette.background.avatar,
-                        width: theme.spacing(7),
-                        height: theme.spacing(7),
-                      }}
-                    >
-                      <Box color="text.primary">T</Box>
-                    </Avatar>
-                  </Grid>
-                  <Grid item direction="column">
-                    <Typography variant="h6">
-                      <Box color="text.primary" fontWeight="bold">
-                        Video Title
-                      </Box>
-                    </Typography>
-                    <Typography variant="body1">
-                      <Box color="text.primary">Creator Name</Box>
-                    </Typography>
-                  </Grid>
-                </Grid>
-                <div style={{ height: "15px" }} />
-                <Grid item align="left">
-                  <Button variant="outlined">Skip</Button>
-                </Grid>
-              </Grid>
+            {/* Video  */}
 
+            <Grid item xs={0} md={1} />
+            <Grid item xs={12} md={6} className={classes.video} align="left">
+              <VideoPlayer src={testVideo.src} />
               <div style={{ height: "15px" }} />
+              <VideoDetails
+                title={testVideo.title}
+                creator={testVideo.creator}
+                creator_photo={testVideo.creator_photo}
+              />
+              <div style={{ height: "15px" }} />
+              <Button variant="outlined">Skip</Button>
             </Grid>
+
+            <Grid item xs={1} />
 
             {/* Comments & Queue */}
 
-            <Grid item xs={12} md={5}>
+            <Grid item xs={12} md={3}>
               <Container className={classes.infoContainer}>
                 <Grid
                   container
@@ -150,6 +124,7 @@ export default withStyles(styles, { withTheme: true })(
                 </Grid>
               </Container>
             </Grid>
+            <Grid item xs={1} />
           </Grid>
         </div>
       );
