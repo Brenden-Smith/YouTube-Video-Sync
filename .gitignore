@@ -23,4 +23,4 @@ yarn-debug.log*
 yarn-error.log*
 server/.env
 client/.env
-client/src/firebase-config.json
+client/src/auth/firebase-config.json
