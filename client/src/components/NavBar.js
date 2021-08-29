@@ -10,7 +10,8 @@ import { alpha, withStyles } from "@material-ui/core/styles";
 import SearchIcon from "@material-ui/icons/Search";
 import ExitToAppIcon from "@material-ui/icons/ExitToApp";
 
-import firebase from "../firebase";
+import firebase from "../auth/firebase";
+import "firebase/auth";
 import React from "react";
 
 const auth = firebase.auth();
@@ -87,12 +88,12 @@ export default withStyles(styles, { withTheme: true })(
 
     render() {
       const { users, isLoaded } = this.state;
-      const { classes, theme } = this.props;
+      const { classes } = this.props;
       return (
         <AppBar className={classes.appbar}>
           <Toolbar>
             <Typography className={classes.title} variant="h6" noWrap>
-              Bideo
+              YouTube Video Sync
             </Typography>
             <div className={classes.search}>
               <div className={classes.searchIcon}>
@@ -108,7 +109,7 @@ export default withStyles(styles, { withTheme: true })(
               />
             </div>
             <div style={{ flexGrow: 1 }} />
-            {/* {isLoaded ? (
+            {isLoaded ? (
               <AvatarGroup max={5} spacing="medium">
                 {users.map((item, index) => {
                   return (
@@ -121,7 +122,7 @@ export default withStyles(styles, { withTheme: true })(
               </AvatarGroup>
             ) : (
               <CircularProgress/>
-            )} */}
+            )}
             <Tooltip title="Sign Out">
               <IconButton onClick={() => auth.signOut()}>
                 <ExitToAppIcon />
