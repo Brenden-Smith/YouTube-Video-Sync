@@ -1,6 +1,6 @@
 // Components
 import React from "react";
-import { BrowserRouter as Router, Route } from "react-router-dom";
+import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
 import {
   createTheme,
   responsiveFontSizes,
@@ -10,8 +10,7 @@ import { ThemeProvider } from "@material-ui/core/styles";
 import { PrivateRoute } from "./components";
 
 // Routes
-import Login from "./routes/Login";
-import Room from "./routes/Room";
+import { Home, Login, Room } from "./routes";
 
 const App = () => {
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
@@ -36,8 +35,11 @@ const App = () => {
   return (
     <ThemeProvider theme={theme}>
       <Router>
-        <PrivateRoute path="/" exact component={Room} />
-        <Route path="/login" component={Login} />
+        <Switch>
+          <Route exact path="/" component={Home} />
+          <PrivateRoute path="/room" exact component={Room} />
+          <Route path="/login" component={Login} />
+        </Switch>
       </Router>
     </ThemeProvider>
   );
