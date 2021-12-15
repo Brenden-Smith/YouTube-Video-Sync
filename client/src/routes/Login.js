@@ -37,7 +37,7 @@ const Login = () => {
       setLoading(true);
       const provider = new fb.auth.GoogleAuthProvider();
       await auth.signInWithPopup(provider);
-      history.push("/")
+      history.push("/room")
     } catch {
       setLoading(false)
       console.log("Failed to log in")
