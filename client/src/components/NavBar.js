@@ -13,6 +13,7 @@ import ExitToAppIcon from "@material-ui/icons/ExitToApp";
 import firebase from "../auth/firebase";
 import "firebase/auth";
 import React from "react";
+import { withRouter } from "react-router-dom";
 
 const auth = firebase.auth();
 
@@ -72,7 +73,7 @@ const styles = (theme) => ({
   },
 });
 
-export default withStyles(styles, { withTheme: true })(
+export default withRouter(withStyles(styles, { withTheme: true })(
   class NavBar extends React.Component {
     constructor() {
       super();
@@ -86,11 +87,18 @@ export default withStyles(styles, { withTheme: true })(
       this.setState({ users: [firebase.auth().currentUser], isLoaded: true });
     }
 
+    handleSignOut(history) {
+      auth.signOut();
+     history.push({
+        pathname: `/`,
+      });
+    }
+
     render() {
       const { users, isLoaded } = this.state;
-      const { classes } = this.props;
+      const { classes, history } = this.props;
       return (
-        <AppBar className={classes.appbar}>
+        <AppBar className={classes.appbar} position="static">
           <Toolbar>
             <Typography className={classes.title} variant="h6" noWrap>
               YouTube Video Sync
@@ -124,7 +132,7 @@ export default withStyles(styles, { withTheme: true })(
               <CircularProgress/>
             )}
             <Tooltip title="Sign Out">
-              <IconButton onClick={() => auth.signOut()}>
+              <IconButton onClick={() => this.handleSignOut(history)}>
                 <ExitToAppIcon />
               </IconButton>
             </Tooltip>
@@ -133,4 +141,4 @@ export default withStyles(styles, { withTheme: true })(
       );
     }
   }
-);
+));
