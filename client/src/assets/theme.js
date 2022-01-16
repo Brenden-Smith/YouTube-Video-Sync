@@ -1,17 +1,19 @@
-import React from 'react';
-import useMediaQuery from '@material-ui/core/useMediaQuery';
-import { createTheme, responsiveFontSizes } from '@material-ui/core/styles'
+import React from "react";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { createTheme, responsiveFontSizes } from "@mui/material/styles";
 
 export default function Theme() {
-    const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
-    const theme = responsiveFontSizes(React.useMemo(
+  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+  const theme = responsiveFontSizes(
+    React.useMemo(
       () =>
-      createTheme({
-        palette: {
-          type: prefersDarkMode ? 'dark' : 'light',
-        },
-      }),
-      [prefersDarkMode],
-    ))
-    return theme
+        createTheme({
+          palette: {
+            type: prefersDarkMode ? "dark" : "light",
+          },
+        }),
+      [prefersDarkMode]
+    )
+  );
+  return theme;
 }
