@@ -18,17 +18,8 @@ import { ref, push, getDatabase } from "firebase/database";
 
 const useStyles = (theme: Theme & AppTheme) => ({
   root: {
-    "&::-webkit-scrollbar": {
-      width: 7,
-    },
-    "&::-webkit-scrollbar-track": {
-      boxShadow: `inset 0 0 6px rgba(0, 0, 0, 0.3)`,
-    },
-    "&::-webkit-scrollbar-thumb": {
-      backgroundColor: "darkgrey",
-      outline: `1px solid slategrey`,
-    },
     height: "100%",
+    width: "100%",
     maxWidth: "100%",
     overflow: "hidden",
   },
@@ -58,7 +49,7 @@ export default function ChatRoom(props: any) {
   }
 
   return (
-    <Grid container direction="column" sx={classes.root} spacing={1}>
+    <Grid container direction="column" sx={classes.root}>
       <Grid item container>
         <List
           sx={{
@@ -91,8 +82,9 @@ export default function ChatRoom(props: any) {
           </div>
         </List>
       </Grid>
-      <Grid item>
+      <Grid item container sx={{width: "100%"}}>
         <TextField
+          autoComplete="off"
           fullWidth
           value={message}
           onChange={(e) => setMessage(e.target.value)}
