@@ -70,3 +70,4 @@ node_modules/
 build
 src/firebase/firebase-config.json
 .github/
+src/firebase/secret_keys.ts
