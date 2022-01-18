@@ -29,9 +29,9 @@ import {
   getDatabase,
   onValue,
   ref,
-  set,
   orderByChild,
   query,
+  off,
 } from "firebase/database";
 import ChatRoom from "../components/ChatRoom";
 import { getFunctions, httpsCallable } from "firebase/functions";
@@ -41,10 +41,22 @@ const useStyles = (theme: Theme) => ({
     backgroundColor: theme.palette.background.default,
     height: "100vh",
     width: "100vw",
+    overflow: "hidden",
+    position: "relative",
   },
+  child: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    bottom: "-20px",
+    right: "-20px",
+    overflow: "scroll"
+  } as any,
   grid: {
     display: "flex",
     flexDirection: "column",
+    width: "100%",
+    height: "100vh",
   },
   content: {
     height: "100%",
@@ -57,11 +69,11 @@ const useStyles = (theme: Theme) => ({
 });
 
 const testVideo: Video = {
-  creator: "Tom Scott",
+  creator: "SVDDEN DEATH",
   creatorPhoto:
-    "https://yt3.ggpht.com/ytc/AKedOLTn7ljFVHlZoPxxekAfuIzfhFPKhBblpYYHhaR4pQ=s88-c-k-c0x00ffffff-no-rj",
-  src: "https://www.youtube.com/embed/LZM9YdO_QKk",
-  title: "The Consequences of Your Code",
+    "https://yt3.ggpht.com/dhEsYuIrDKIv0Y-iEy-p9E8AF2xEiBtJrL87MttjvN0D7tbZxccO6VkSQuLABk8lQSMC0cLX=s88-c-k-c0x00ffffff-no-rj",
+  src: "https://www.youtube.com/watch?v=BO1EYEDdFPo",
+  title: "SVDDEN DEATH LIVE AT SOLD OUT RED ROCKS",
   thumbnail: "",
   comments: [
     {
@@ -99,8 +111,9 @@ const testVideo: Video = {
 
 export default function Room() {
   const [video] = useState<Video>(testVideo);
-  const [currentUser, setCurrentUser] = useState<LocalUser | null>(null);
+  const [currentUser, setCurrentUser] = useState<string | undefined>("");
   const [currentRoom, setCurrentRoom] = useState<string | undefined>("");
+  const [host, setHost] = useState<string>("");
   const [users, setUsers] = useState<Array<LocalUser>>([]);
   const [messages, setMessages] = useState<Array<CardItem>>([]);
   const [tab, setTab] = useState("1");
@@ -110,16 +123,21 @@ export default function Room() {
 
   // Back-end loading
   useEffect(() => {
-    let messageData: any;
-    let userData: any;
 
     const addUser = httpsCallable(getFunctions(), "addUser");
     const removeUser = httpsCallable(getFunctions(), "removeUser");
 
+    const userQuery = ref(getDatabase(), `rooms/${id}/users`)
+    const messageQuery = query(
+      ref(getDatabase(), `messages/${id}`),
+      orderByChild("serverTimestamp")
+    )
+    const hostQuery = ref(getDatabase(), `rooms/${id}/host`)
+
     async function initializeRoom() {
       if (getAuth().currentUser) {
 
-        setCurrentUser(currentUser)
+        setCurrentUser(getAuth().currentUser?.uid)
         setCurrentRoom(id)
         await addUser({
           room: id,
@@ -129,8 +147,8 @@ export default function Room() {
         });
 
         // User data listener
-        userData = onValue(
-          ref(getDatabase(), `rooms/${id}/users`),
+        onValue(
+          userQuery,
           (snapshot) => {
             if (snapshot.val()) {
               let data: Array<LocalUser> = [];
@@ -143,11 +161,8 @@ export default function Room() {
         );
 
         // Message data listener
-        messageData = onValue(
-          query(
-            ref(getDatabase(), `messages/${id}`),
-            orderByChild("serverTimestamp")
-          ),
+        onValue(
+          messageQuery,
           (snapshot) => {
             if (snapshot.val()) {
               let data: Array<CardItem> = [];
@@ -159,6 +174,13 @@ export default function Room() {
           }
         );
 
+        // Host data listener
+        onValue(hostQuery, (snapshot) => {
+          if (snapshot.val()) {
+            setHost(snapshot.val());
+          }
+        })
+
         setIsMounted(true);
       }
     }
@@ -168,93 +190,96 @@ export default function Room() {
     return () => {
       removeUser({
         room: currentRoom,
-        user: currentUser
+        uid: currentUser
       });
-      userData();
-      messageData();
+      off(userQuery, "value");
+      off(messageQuery, "value");
+      off(hostQuery, "value");
     };
   }, []);
 
   return isMounted ? (
     <Container sx={classes.root} disableGutters={true} maxWidth={false}>
-      <Grid container justifyContent="space-evenly">
-        {/* Video  */}
+      <div style={classes.child}>
+        <Grid container justifyContent="space-evenly">
+          {/* Video  */}
 
-        <Grid item container xs={12} lg={9} sx={classes.grid}>
-          <Hidden smUp>
-            <NavBar users={users} />
-          </Hidden>
-          <VideoPlayer src={video.src} />
-          <div style={{ height: "30px" }} />
-          <div style={{ marginRight: "15px", marginLeft: "15px" }}>
-            <Grid container direction="row" justifyContent="space-between">
-              <Grid item>
-                <VideoDetails
-                  title={video.title}
-                  creator={video.creator}
-                  creatorPhoto={video.creatorPhoto}
-                />
+          <Grid item container xs={12} lg={9} sx={classes.grid}>
+            <Hidden smUp>
+              <NavBar users={users} />
+            </Hidden>
+            <VideoPlayer room={id} host={host}/>
+            <div style={{ height: "30px" }} />
+            <div style={{ marginRight: "15px", marginLeft: "15px" }}>
+              <Grid container direction="row" justifyContent="space-between">
+                <Grid item>
+                  <VideoDetails
+                    title={video.title}
+                    creator={video.creator}
+                    creatorPhoto={video.creatorPhoto}
+                  />
+                </Grid>
+                <Grid item sx={{ textAlign: "right" }}>
+                  <RemoteControl />
+                </Grid>
               </Grid>
-              <Grid item sx={{ textAlign: "right" }}>
-                <RemoteControl />
-              </Grid>
-            </Grid>
-          </div>
-          <div style={{ height: "30px" }} />
+            </div>
+            <div style={{ height: "30px" }} />
+          </Grid>
+
+          {/* Information Widget */}
+
+          <Grid item container xs={12} lg={3} sx={classes.grid}>
+            <Hidden smDown>
+              <NavBar users={users} />
+            </Hidden>
+            <Divider />
+            <Paper sx={{ height: "calc(100% - 65px)" }}>
+              <TabContext value={tab}>
+                <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+                  <TabList
+                    centered={true}
+                    value={tab}
+                    onChange={(event, value) => setTab(value)}
+                    aria-label="Information tabs"
+                    textColor="primary"
+                    variant="fullWidth"
+                  >
+                    <Tab label="Chat" value="1" />
+                    <Tab label="Comments" value="2" />
+                    <Tab label="Queue" value="3" />
+                  </TabList>
+                </Box>
+
+                <TabPanel value="1" sx={classes.tabPanel}>
+                  <ChatRoom messages={messages} room={id} />
+                </TabPanel>
+
+                {/* Comments */}
+                <TabPanel value="2" sx={classes.tabPanel}>
+                  <List>
+                    {video?.comments
+                      ? video.comments.map((item: CardItem, key: any) => {
+                          return (
+                            <>
+                              <Card item={item} key={key} />
+                              <Divider />
+                            </>
+                          );
+                        })
+                      : null}
+                  </List>
+                </TabPanel>
+
+                {/* Queue */}
+                <TabPanel value="3" sx={classes.tabPanel}>
+                  <QueueFeed />
+                </TabPanel>
+              </TabContext>
+            </Paper>
+          </Grid>
         </Grid>
-
-        {/* Information Widget */}
-
-        <Grid item container xs={12} lg={3} sx={classes.grid}>
-          <Hidden smDown>
-            <NavBar users={users} />
-          </Hidden>
-          <Divider />
-          <Paper sx={{ height: "calc(100% - 65px)" }}>
-            <TabContext value={tab}>
-              <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-                <TabList
-                  centered={true}
-                  value={tab}
-                  onChange={(event, value) => setTab(value)}
-                  aria-label="Information tabs"
-                  textColor="primary"
-                  variant="fullWidth"
-                >
-                  <Tab label="Chat" value="1" />
-                  <Tab label="Comments" value="2" />
-                  <Tab label="Queue" value="3" />
-                </TabList>
-              </Box>
-
-              <TabPanel value="1" sx={classes.tabPanel}>
-                <ChatRoom messages={messages} room={id} />
-              </TabPanel>
-
-              {/* Comments */}
-              <TabPanel value="2" sx={classes.tabPanel}>
-                <List>
-                  {video?.comments
-                    ? video.comments.map((item: CardItem, key: any) => {
-                        return (
-                          <>
-                            <Card item={item} key={key} />
-                            <Divider />
-                          </>
-                        );
-                      })
-                    : null}
-                </List>
-              </TabPanel>
-
-              {/* Queue */}
-              <TabPanel value="3" sx={classes.tabPanel}>
-                <QueueFeed />
-              </TabPanel>
-            </TabContext>
-          </Paper>
-        </Grid>
-      </Grid>
+      </div>
     </Container>
   ) : (
     <div
