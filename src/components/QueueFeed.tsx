@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useEffect } from "react"
 import {
   Box,
   Divider,
@@ -15,6 +15,8 @@ import { Video } from "../models";
 import { useState } from "react";
 import { useTheme } from "@mui/styles";
 import AddIcon from "@mui/icons-material/Add";
+import { getDatabase, off, onValue, push, ref } from "firebase/database";
+import { getFunctions, httpsCallable } from "firebase/functions";
 
 const useStyles = (theme: Theme) => ({
   thumbnail: {
@@ -24,50 +26,82 @@ const useStyles = (theme: Theme) => ({
   },
 });
 
+export default function QueueFeed(props: any) {
 
-const TestVideos: Array<Video> = [
-  {
-    title: "The Consequences of Your Code",
-    creator: "Tom Scott",
-    thumbnail: "https://i3.ytimg.com/vi/LZM9YdO_QKk/maxresdefault.jpg",
-  },
-  {
-    title: "The Consequences of Your Code",
-    creator: "Tom Scott",
-    thumbnail: "https://i3.ytimg.com/vi/LZM9YdO_QKk/maxresdefault.jpg",
-  },
-  {
-    title: "The Consequences of Your Code",
-    creator: "Tom Scott",
-    thumbnail: "https://i3.ytimg.com/vi/LZM9YdO_QKk/maxresdefault.jpg",
-  },
-  {
-    title: "The Consequences of Your Code",
-    creator: "Tom Scott",
-    thumbnail: "https://i3.ytimg.com/vi/LZM9YdO_QKk/maxresdefault.jpg",
-  },
-  {
-    title: "The Consequences of Your Code",
-    creator: "Tom Scott",
-    thumbnail: "https://i3.ytimg.com/vi/LZM9YdO_QKk/maxresdefault.jpg",
-  },
-];
-
-export default function QueueFeed() {
-
-  const [error] = useState(null)
-  const [queue, setQueue] = useState(TestVideos)
+  const [queue, setQueue] = useState<Array<Video>>([])
+  const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const classes = useStyles(useTheme())
+  const { room } = props;
+
+  const fetchVideo = httpsCallable(getFunctions(), "fetchVideo");
+  const fetchChannelThumbnail = httpsCallable(getFunctions(), "fetchChannelThumbnail");
+
+  useEffect(() => {
+
+    // Queue data listener
+    const queueQuery = ref(getDatabase(), `rooms/${room}/queue`)
+    onValue(queueQuery, (snapshot) => {
+      if (snapshot.val()) {
+        let data: Array<Video> = [];
+        snapshot.forEach((user) => {
+          data.push(user.val());
+        });
+        setQueue([...data]);
+      }
+    })
+
+    return () => {
+      off(queueQuery, "value");
+    }
+
+  }, []);
 
   async function handleAddToQueue() {
-    setLoading(true)
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    setQueue([...queue, {
-      title: "The Consequences of Your Code",
-      creator: "Tom Scott",
-      thumbnail: "https://i3.ytimg.com/vi/LZM9YdO_QKk/maxresdefault.jpg",
-    }])
+    if (input !== "") {
+      setLoading(true)
+      setError(null)
+      var regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      var match = input.match(regExp);
+      if (match && match[2].length === 11) {
+        console.log(match[2])
+        await fetchVideo({ query: match[2].toString() }).then(async (result: any) => {
+          const videoData = result.data;
+          if (result.data !== 500) {         
+            await fetchChannelThumbnail({ query: result.data.snippet.channelId.toString() }).then((response) => {
+              const channelData: any = response.data
+              if (response.data !== 500) {
+                const video: Video = {
+                  channelId: videoData.snippet.channelId,
+                  channelThumbnail: channelData.snippet.thumbnails["default"].url,
+                  channelTitle: videoData.snippet.channelTitle,
+                  videoId: videoData.id,
+                  videoThumbnail: videoData.snippet.thumbnails["default"].url,
+                  videoTitle: videoData.snippet.title,
+                }
+                push(ref(getDatabase(), `rooms/${room}/queue`), video)
+              } else {
+                setError("There was an error")
+              }
+            }).catch((error) => {
+              console.log(error)
+              setError("There was an error")
+            })
+          } else {
+            setError("There was an error")
+          }
+        }).catch((err) => {
+          setError("There was an error")
+          console.log(err)
+        });
+      } else {
+        setError("Invalid URL")
+      }
+    } else {
+      setError("Input required")
+    }
+    setInput("")
     setLoading(false)
   }
 
@@ -75,7 +109,8 @@ export default function QueueFeed() {
    * Render a video queue item
    */
   function QueueCard(props: any) {
-    const { video, index } = props
+    const { index } = props
+    const video: Video = props.video
     return (
       <Grid
         container
@@ -91,7 +126,7 @@ export default function QueueFeed() {
         </Grid>
         <Grid item alignItems="left">
           <img
-            src={video.thumbnail === "" ? null : video.thumbnail}
+            src={video.videoThumbnail}
             style={classes.thumbnail}
             alt="thumbnail"
           />
@@ -101,12 +136,12 @@ export default function QueueFeed() {
             <Grid item xs={12} alignItems="center">
               <Typography variant="subtitle2">
                 <Box color="text.primary" fontWeight="bold">
-                  {video.title}
+                  {video.videoTitle}
                 </Box>
               </Typography>
               <div style={{ width: "5px" }} />
               <Typography variant="caption">
-                <Box color="text.secondary">{video.creator}</Box>
+                <Box color="text.secondary">{video.channelTitle}</Box>
               </Typography>
             </Grid>
           </Grid>
@@ -125,6 +160,8 @@ export default function QueueFeed() {
         label="YouTube URL"
         fullWidth={true}
         helperText={error}
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
         InputProps={{
           endAdornment: (
             <InputAdornment position="end">
