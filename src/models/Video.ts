@@ -1,8 +1,9 @@
 export default interface Video {
+    channelId: string,
+    channelThumbnail?: string,
+    channelTitle: string,
     comments?: Array < any >,
-    creator: string,
-    creatorPhoto?: string,
-    src?: string,
-    title: string,
-    thumbnail?: string,
+    videoId: string,
+    videoThumbnail: string,
+    videoTitle: string,
 }
