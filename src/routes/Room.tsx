@@ -16,7 +16,6 @@ import {
   QueueFeed,
   VideoPlayer,
   VideoDetails,
-  RemoteControl,
   NavBar,
 } from "../components";
 import { CardItem, LocalUser, Video } from "../models";
@@ -32,6 +31,7 @@ import {
   orderByChild,
   query,
   off,
+  onDisconnect,
 } from "firebase/database";
 import ChatRoom from "../components/ChatRoom";
 import { getFunctions, httpsCallable } from "firebase/functions";
@@ -68,51 +68,50 @@ const useStyles = (theme: Theme) => ({
   },
 });
 
-const testVideo: Video = {
-  creator: "SVDDEN DEATH",
-  creatorPhoto:
-    "https://yt3.ggpht.com/dhEsYuIrDKIv0Y-iEy-p9E8AF2xEiBtJrL87MttjvN0D7tbZxccO6VkSQuLABk8lQSMC0cLX=s88-c-k-c0x00ffffff-no-rj",
-  src: "https://www.youtube.com/watch?v=BO1EYEDdFPo",
-  title: "SVDDEN DEATH LIVE AT SOLD OUT RED ROCKS",
-  thumbnail: "",
-  comments: [
-    {
-      message: "I love comments",
-      createdAt: "Today",
-      displayName: "John Doe",
-      photoURL: "",
-    },
-    {
-      message: "I love comments",
-      createdAt: "Today",
-      displayName: "John Doe",
-      photoURL: "",
-    },
-    {
-      message: "I love comments",
-      createdAt: "Today",
-      displayName: "John Doe",
-      photoURL: "",
-    },
-    {
-      message: "I love comments",
-      createdAt: "Today",
-      displayName: "John Doe",
-      photoURL: "",
-    },
-    {
-      message: "I love comments",
-      createdAt: "Today",
-      displayName: "John Doe",
-      photoURL: "",
-    },
-  ],
-};
+// const testVideo: Video = {
+//   channelId: "UC7KzjYfJvfCTFvbMbw_BhUw",
+//   channelTitle: "SVDDEN DEATH",
+//   channelThumbnail:
+//     "https://yt3.ggpht.com/dhEsYuIrDKIv0Y-iEy-p9E8AF2xEiBtJrL87MttjvN0D7tbZxccO6VkSQuLABk8lQSMC0cLX=s88-c-k-c0x00ffffff-no-rj",
+//   videoId: "SBL0Cbv2ooU",
+//   videoTitle: "SVDDEN DEATH - Confusion Spell (Official Music Video)",
+//   videoThumbnail: "",
+//   comments: [
+//     {
+//       message: "I love comments",
+//       createdAt: "Today",
+//       displayName: "John Doe",
+//       photoURL: "",
+//     },
+//     {
+//       message: "I love comments",
+//       createdAt: "Today",
+//       displayName: "John Doe",
+//       photoURL: "",
+//     },
+//     {
+//       message: "I love comments",
+//       createdAt: "Today",
+//       displayName: "John Doe",
+//       photoURL: "",
+//     },
+//     {
+//       message: "I love comments",
+//       createdAt: "Today",
+//       displayName: "John Doe",
+//       photoURL: "",
+//     },
+//     {
+//       message: "I love comments",
+//       createdAt: "Today",
+//       displayName: "John Doe",
+//       photoURL: "",
+//     },
+//   ],
+// };
 
 export default function Room() {
-  const [video] = useState<Video>(testVideo);
-  const [currentUser, setCurrentUser] = useState<string | undefined>("");
-  const [currentRoom, setCurrentRoom] = useState<string | undefined>("");
+  const [video] = useState<Video>();
   const [host, setHost] = useState<string>("");
   const [users, setUsers] = useState<Array<LocalUser>>([]);
   const [messages, setMessages] = useState<Array<CardItem>>([]);
@@ -134,18 +133,20 @@ export default function Room() {
     )
     const hostQuery = ref(getDatabase(), `rooms/${id}/host`)
 
+    const roomQuery = ref(getDatabase(), `rooms/${id}`);
+
+    let currentUser = getAuth().currentUser?.uid;
+    let currentRoom = id;
+
     async function initializeRoom() {
       if (getAuth().currentUser) {
-
-        setCurrentUser(getAuth().currentUser?.uid)
-        setCurrentRoom(id)
         await addUser({
           room: id,
           uid: getAuth().currentUser?.uid.toString(),
           displayName: getAuth().currentUser?.displayName,
           photoURL: getAuth().currentUser?.photoURL,
         });
-
+        
         // User data listener
         onValue(
           userQuery,
@@ -181,6 +182,9 @@ export default function Room() {
           }
         })
 
+        // Disconnect listener
+        onDisconnect(ref(getDatabase(), `room/${id}/users/${getAuth().currentUser?.uid}`)).remove()
+        
         setIsMounted(true);
       }
     }
@@ -191,7 +195,7 @@ export default function Room() {
       removeUser({
         room: currentRoom,
         uid: currentUser
-      });
+        });
       off(userQuery, "value");
       off(messageQuery, "value");
       off(hostQuery, "value");
@@ -208,23 +212,7 @@ export default function Room() {
             <Hidden smUp>
               <NavBar users={users} />
             </Hidden>
-            <VideoPlayer room={id} host={host}/>
-            <div style={{ height: "30px" }} />
-            <div style={{ marginRight: "15px", marginLeft: "15px" }}>
-              <Grid container direction="row" justifyContent="space-between">
-                <Grid item>
-                  <VideoDetails
-                    title={video.title}
-                    creator={video.creator}
-                    creatorPhoto={video.creatorPhoto}
-                  />
-                </Grid>
-                <Grid item sx={{ textAlign: "right" }}>
-                  <RemoteControl />
-                </Grid>
-              </Grid>
-            </div>
-            <div style={{ height: "30px" }} />
+            <VideoPlayer room={id} host={host} video={video} users={users}/>
           </Grid>
 
           {/* Information Widget */}
@@ -273,7 +261,7 @@ export default function Room() {
 
                 {/* Queue */}
                 <TabPanel value="3" sx={classes.tabPanel}>
-                  <QueueFeed />
+                  <QueueFeed room={id}/>
                 </TabPanel>
               </TabContext>
             </Paper>
