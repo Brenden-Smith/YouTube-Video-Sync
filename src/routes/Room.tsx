@@ -31,6 +31,7 @@ import {
   orderByChild,
   query,
   off,
+  set,
   onDisconnect,
 } from "firebase/database";
 import ChatRoom from "../components/ChatRoom";
@@ -68,51 +69,8 @@ const useStyles = (theme: Theme) => ({
   },
 });
 
-// const testVideo: Video = {
-//   channelId: "UC7KzjYfJvfCTFvbMbw_BhUw",
-//   channelTitle: "SVDDEN DEATH",
-//   channelThumbnail:
-//     "https://yt3.ggpht.com/dhEsYuIrDKIv0Y-iEy-p9E8AF2xEiBtJrL87MttjvN0D7tbZxccO6VkSQuLABk8lQSMC0cLX=s88-c-k-c0x00ffffff-no-rj",
-//   videoId: "SBL0Cbv2ooU",
-//   videoTitle: "SVDDEN DEATH - Confusion Spell (Official Music Video)",
-//   videoThumbnail: "",
-//   comments: [
-//     {
-//       message: "I love comments",
-//       createdAt: "Today",
-//       displayName: "John Doe",
-//       photoURL: "",
-//     },
-//     {
-//       message: "I love comments",
-//       createdAt: "Today",
-//       displayName: "John Doe",
-//       photoURL: "",
-//     },
-//     {
-//       message: "I love comments",
-//       createdAt: "Today",
-//       displayName: "John Doe",
-//       photoURL: "",
-//     },
-//     {
-//       message: "I love comments",
-//       createdAt: "Today",
-//       displayName: "John Doe",
-//       photoURL: "",
-//     },
-//     {
-//       message: "I love comments",
-//       createdAt: "Today",
-//       displayName: "John Doe",
-//       photoURL: "",
-//     },
-//   ],
-// };
-
 export default function Room() {
-  const [video] = useState<Video>();
-  const [host, setHost] = useState<string>("");
+  const [video, setVideo] = useState<Video>({} as Video);
   const [users, setUsers] = useState<Array<LocalUser>>([]);
   const [messages, setMessages] = useState<Array<CardItem>>([]);
   const [tab, setTab] = useState("1");
@@ -123,82 +81,81 @@ export default function Room() {
   // Back-end loading
   useEffect(() => {
 
-    const addUser = httpsCallable(getFunctions(), "addUser");
-    const removeUser = httpsCallable(getFunctions(), "removeUser");
+    // Constants
+    const currentUser = getAuth().currentUser?.uid;
+    const room = id;
 
-    const userQuery = ref(getDatabase(), `rooms/${id}/users`)
+    // Queries
+    const userQuery = ref(getDatabase(), `rooms/${room}/users`);
     const messageQuery = query(
-      ref(getDatabase(), `messages/${id}`),
+      ref(getDatabase(), `messages/${room}`),
       orderByChild("serverTimestamp")
+    );
+    const videoQuery = ref(getDatabase(), `rooms/${room}/video`);
+
+    const currentUserRef = ref(getDatabase(), `rooms/${room}/users/${currentUser}`);
+
+    // Disconnect listener
+    onDisconnect(currentUserRef).remove()
+
+    // User data listener
+    onValue(
+      userQuery,
+      async (snapshot) => {
+        if (snapshot.val()) {
+          let data: Array<LocalUser> = [];
+          snapshot.forEach((user) => {
+            data.push(user.val());
+          });
+          setUsers([...data]);
+        }
+      }
+    );
+
+    // Message data listener
+    onValue(
+      messageQuery,
+      (snapshot) => {
+        if (snapshot.val()) {
+          let data: Array<CardItem> = [];
+          snapshot.forEach((message) => {
+            data.push(message.val());
+          });
+          setMessages([...data]);
+        }
+      }
+    );
+
+    // Video data listener
+    onValue(
+      videoQuery,
+      (snapshot) => {
+        if (snapshot.val()) {
+          setVideo(snapshot.val());
+        }
+      }
     )
-    const hostQuery = ref(getDatabase(), `rooms/${id}/host`)
-
-    const roomQuery = ref(getDatabase(), `rooms/${id}`);
-
-    let currentUser = getAuth().currentUser?.uid;
-    let currentRoom = id;
 
     async function initializeRoom() {
       if (getAuth().currentUser) {
-        await addUser({
-          room: id,
-          uid: getAuth().currentUser?.uid.toString(),
+
+        // Add current user to room
+        await set(currentUserRef, {
           displayName: getAuth().currentUser?.displayName,
           photoURL: getAuth().currentUser?.photoURL,
+          uid: currentUser,
+        }).then(() => {
+          setIsMounted(true);
         });
-        
-        // User data listener
-        onValue(
-          userQuery,
-          (snapshot) => {
-            if (snapshot.val()) {
-              let data: Array<LocalUser> = [];
-              snapshot.forEach((user) => {
-                data.push(user.val());
-              });
-              setUsers([...data]);
-            }
-          }
-        );
-
-        // Message data listener
-        onValue(
-          messageQuery,
-          (snapshot) => {
-            if (snapshot.val()) {
-              let data: Array<CardItem> = [];
-              snapshot.forEach((message) => {
-                data.push(message.val());
-              });
-              setMessages([...data]);
-            }
-          }
-        );
-
-        // Host data listener
-        onValue(hostQuery, (snapshot) => {
-          if (snapshot.val()) {
-            setHost(snapshot.val());
-          }
-        })
-
-        // Disconnect listener
-        onDisconnect(ref(getDatabase(), `room/${id}/users/${getAuth().currentUser?.uid}`)).remove()
-        
-        setIsMounted(true);
+        await set(ref(getDatabase(), `rooms/${room}/video/action`), "set");
       }
     }
 
     initializeRoom();
 
     return () => {
-      removeUser({
-        room: currentRoom,
-        uid: currentUser
-        });
       off(userQuery, "value");
       off(messageQuery, "value");
-      off(hostQuery, "value");
     };
   }, []);
 
@@ -212,7 +169,7 @@ export default function Room() {
             <Hidden smUp>
               <NavBar users={users} />
             </Hidden>
-            <VideoPlayer room={id} host={host} video={video} users={users}/>
+            <VideoPlayer room={id} video={video} users={users}/>
           </Grid>
 
           {/* Information Widget */}
