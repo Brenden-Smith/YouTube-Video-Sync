@@ -131,7 +131,8 @@ exports.onActionChange = functions.database.ref("/rooms/{room}/video/action").on
  * Listen to user changes in a room
  */
 exports.listenToUsers = functions.database.ref("/rooms/{room}").onUpdate(async (snapshot, context) => {
-  if (!snapshot.after.val().hasChild("users")) {
+  if (!snapshot.after.hasChild("users")) {
     await admin.database().ref(`rooms/${context.params.room}`).remove();
+    await admin.database().ref(`messages/${context.params.room}`).remove();
   }
 });
