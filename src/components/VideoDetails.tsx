@@ -12,16 +12,18 @@ export default function VideoDetails(props: any) {
     <>
       <Grid container direction="row" spacing={2}>
         <Grid item>
-          <Avatar
-            style={{
-              background: theme.palette.background.avatar,
-              width: theme.spacing(7),
-              height: theme.spacing(7),
-            }}
-            src={video.channelThumbnail}
-          >
-            {video.channelThumbnail === "" ? null : <Box color="text.primary">T</Box>}
-          </Avatar>
+          {video.channelThumbnail &&
+            <Avatar
+              style={{
+                background: theme.palette.background.avatar,
+                width: theme.spacing(7),
+                height: theme.spacing(7),
+              }}
+              src={video.channelThumbnail}
+            >
+              {video.channelThumbnail === "" ? null : <Box color="text.primary">T</Box>}
+            </Avatar>
+          }
         </Grid>
         <Grid item>
           <Container disableGutters={true}>
