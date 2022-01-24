@@ -1,5 +1,4 @@
-import { Button, Grid, IconButton, Slider } from "@mui/material"
-import { getAuth } from "firebase/auth"
+import { Button, CircularProgress, Grid, IconButton, Slider } from "@mui/material"
 import { getDatabase, off, onValue, ref, set } from "firebase/database"
 import React, { useEffect, useState } from "react"
 import YouTube, { Options } from "react-youtube"
@@ -30,26 +29,21 @@ const styles = {
 
 export default function VideoPlayer(props: any) {
 
-  const [player, setPlayer] = useState<YouTubePlayer>()
-  const [videoID, setVideoID] = useState("")
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [currentTime, setCurrentTime] = useState(0)
-  const [currentVolume, setCurrentVolume] = useState(0)
-  const [prevVolume, setPrevVolume] = useState(0)
-  const [changing, setChanging] = useState(false)
-  const { room, host, users } = props
   const video: Video = props.video
+  const [player, setPlayer] = useState<YouTubePlayer>()
+  const [timer, setTimer] = useState<any>(null);
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [holdState, setHoldState] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0)
+  const [currentVolume, setCurrentVolume] = useState<any>(25)
+  const [changing, setChanging] = useState(false)
+  const { room } = props
 
   useEffect(() => {
-
-    const videoQuery = ref(getDatabase(), `rooms/${room}/video/source`)
-    onValue(
-      videoQuery,
-      (snapshot) => {
-        setVideoID(snapshot.val())
-      }
-    )
     
+    /**
+     * Keep user in sync with database time
+     */
     const timeQuery = ref(getDatabase(), `rooms/${room}/video/time`)
     onValue(
       timeQuery,
@@ -63,31 +57,40 @@ export default function VideoPlayer(props: any) {
       }
     )
 
+    /**
+     * Listen for actions from the database
+     */
     const actionQuery = ref(getDatabase(), `rooms/${room}/video/action`) 
     onValue(actionQuery, (snapshot) => {
-      if (player) {
-        if (snapshot.val() === "play") {
-          player.playVideo()
-        } else if (snapshot.val() === "pause") {
-          player.pauseVideo()
-        }
+      switch (snapshot.val()) {
+        case "play": 
+          player?.playVideo()
+          setChanging(false)
+          break
+        case "pause":
+          player?.pauseVideo()
+          setChanging(false)
+          break
+        case "set":
+          setChanging(false)
+          setTimeout(() => { set(ref(getDatabase(), `rooms/${room}/video/time`), player?.getCurrentTime() || 0) }, 500)
+          break
+        case "next":
+          player?.pauseVideo();
+          clearInterval(timer);
+          setTimer(null);
+          setChanging(true)
+          setCurrentTime(0);
+          break
       }
-    })  
-
+    })
+    
     return () => {
+      clearInterval(timer)
       off(actionQuery, "value")
       off(timeQuery, "value")
-      off(videoQuery, "value")
     }
-  }, [player, room])
-
-  useEffect(() => {
-    if (player) {
-      set(ref(getDatabase(), `rooms/${room}/video/time`), player?.getCurrentTime())
-    }
-  }, [users])
-
-  let timeCount: any;
+  }, [])
 
   let opts: Options = {
     playerVars: {
@@ -101,22 +104,27 @@ export default function VideoPlayer(props: any) {
     }
   }
 
+  /**
+   * Handle YouTube player state changes
+   */
   async function onStateChange(e: { target: YouTubePlayer, data: number }) {
     switch (e.data) {
       case YouTube.PlayerState.PLAYING:
-        console.log("Playing")
+        await set(ref(getDatabase(), `rooms/${room}/video/action`), "play")
         setIsPlaying(true)
-        set(ref(getDatabase(), `rooms/${room}/video/action`), "play")
-        timeCount = setInterval(() => {
-          setCurrentTime(e.target.getCurrentTime())
-        }, 100)
+        if (timer === null) {
+          setTimer(setInterval(() => {
+            if (player) {
+              setCurrentTime(player.getCurrentTime())
+            }
+          }, 100))
+        }
         break
       case YouTube.PlayerState.PAUSED:
+        await set(ref(getDatabase(), `rooms/${room}/video/action`), "pause");
         setIsPlaying(false)
-        set(ref(getDatabase(), `rooms/${room}/video/action`), "pause")
-        clearInterval(timeCount)
-        break
-      case YouTube.PlayerState.ENDED:
+        clearInterval(timer);
+        setTimer(null);
         break
     }
   }
@@ -124,26 +132,57 @@ export default function VideoPlayer(props: any) {
   return (
     <>
       <div style={styles.container}>
-        <YouTube
-          id="player"
-          containerClassName="youtubeContainer"
-          videoId={video.videoId}
-          onEnd={() => { }} // TODO: Call cloud function to update video
-          onStateChange={(e) => onStateChange(e)}
-          onReady={(e) => {
-            console.log("Ready")
-            setPlayer(e.target)
-            setCurrentVolume(e.target.getVolume())
-          }}
-          opts={opts}
-        />
+        {video.videoId ?
+          <YouTube
+            id="player"
+            containerClassName="youtubeContainer"
+            videoId={video.videoId}
+            onEnd={() => {
+              clearInterval(timer);
+              setTimer(null);
+              if (!changing) {
+                set(ref(getDatabase(), `rooms/${room}/video/action`), "next")
+              }
+              setCurrentTime(0);
+            }}
+            onStateChange={(e) => onStateChange(e)}
+            onReady={(e) => {
+              console.log("Ready")
+              setChanging(false)
+              setPlayer(e.target)
+              e.target.setVolume(currentVolume);
+            }}
+            opts={opts}
+          /> :  (
+            <div className="youtubeContainer" style={{ backgroundColor: "black" }}>
+              <div style={{position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)"}}>
+                No video selected
+              </div>
+            </div>
+          )
+        }
+        {changing ?
+          <div className="youtubeContainer" style={{ backgroundColor: "black", position: "absolute", top: 0 }}>
+            <div style={{position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)"}}>
+              <CircularProgress/>
+            </div>
+          </div>
+        : null}
         <div style={{ position: "absolute", bottom: -20, width: "100%", zIndex: 10 }}>
-          <Slider max={player?.getDuration()} value={currentTime}
+          <Slider
+            disabled={changing || !video.videoId}
+            max={player?.getDuration()}
+            value={currentTime}
             size="small"
-            onChange={(e, value) => setCurrentTime(value as number)}
-            onChangeCommitted={(event, value) => {
+            onChange={(e, value) => {
+              setHoldState(isPlaying);
+              player?.pauseVideo();
+              setCurrentTime(value as number)
+            }}
+            onChangeCommitted={async(event, value) => {
               player?.seekTo(value as number, true)
-              set(ref(getDatabase(), `rooms/${room}/video/time`), value as number)
+              await set(ref(getDatabase(), `rooms/${room}/video/time`), value as number)
+              holdState ? player?.playVideo() : player?.pauseVideo()
             }}
             valueLabelDisplay="auto"
             valueLabelFormat={(value) => {
@@ -167,11 +206,14 @@ export default function VideoPlayer(props: any) {
                 <Grid item>
                   <Grid container direction="row" spacing={2} justifyContent="center" alignItems="center">
                   <Grid item>
-                    <IconButton onClick={() => {
-                      if (currentVolume === 0) {
-                        setCurrentVolume(prevVolume)
+                    <IconButton
+                      disabled={changing || !video.videoId}
+                      onClick={() => {
+                        if (currentVolume === 0) {
+                        player?.unMute()
+                        setCurrentVolume(player?.getVolume())
                       } else {
-                        setPrevVolume(currentVolume)
+                        player?.mute()
                         setCurrentVolume(0)
                       }
                     }}>
@@ -180,7 +222,9 @@ export default function VideoPlayer(props: any) {
                     </Grid>
                     <Grid item>
                       <div style={{width: "100px"}}>
-                        <Slider max={100}
+                      <Slider
+                        disabled={changing || !video.videoId}
+                        max={100}
                           value={currentVolume}
                           onChange={(e, value) => {
                             setCurrentVolume(value as number)
@@ -191,15 +235,25 @@ export default function VideoPlayer(props: any) {
                     </Grid>
                   </Grid>
                 </Grid>
-                <Grid item>
-                  <Button
+              <Grid item>
+                <Button
+                  disabled={changing || !video.videoId}
                     variant="outlined"
                     color="primary"
                     onClick={isPlaying ? () => player?.pauseVideo() : () => player?.playVideo()}
                   >
                     {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
                   </Button>
-                  <Button variant="outlined" color="primary">
+                <Button
+                  disabled={changing || !video.videoId}
+                    variant="outlined"
+                    color="primary"
+                  onClick={() => {
+                    setChanging(true);
+                    clearInterval(timer);
+                    setTimer(null);
+                    set(ref(getDatabase(), `rooms/${room}/video/action`), "next")
+                  }}>
                     <SkipNextIcon />
                   </Button>
                 </Grid>
