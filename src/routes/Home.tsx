@@ -54,13 +54,10 @@ export default function Home() {
                 Video Sync
               </Typography>
               <Typography align="center" variant="body1">
-                Visit my website: <Link href="https://brenden-smith.com" target="_blank">brenden-smith.com</Link>
-              </Typography>
-              <Typography align="center" variant="body1">
                 An application by Brenden Smith created with React, NodeJS, and Firebase
               </Typography>
-              <Typography align="center" variant="body2">
-                Update (1/17/22): Just started working on the back end! You can now join a room and see who else is in it.
+              <Typography align="center" variant="body1">
+                Visit my website: <Link href="https://brenden-smith.com" target="_blank">brenden-smith.com</Link>
               </Typography>
             </Grid>
             <Grid item sx={{ textAlign: "center" }}>
