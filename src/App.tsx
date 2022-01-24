@@ -11,7 +11,7 @@ import {
   ReCaptchaV3Provider,
 } from "firebase/app-check";
 import { FirebaseConfig, RecaptchaConfig } from "./firebase/secret_keys";
-import CreateAppTheme from "./theme";
+import CreateAppTheme from "./assets/theme";
 
 // Routes
 import { Home, Login, Room } from "./routes";

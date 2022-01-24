@@ -1,10 +1,9 @@
-import { useState } from "react";
+import React from "react";
 import { CircularProgress, IconButton, Tooltip, Theme } from "@mui/material";
 import { AppBar, Avatar, Toolbar } from "@mui/material";
 import { AvatarGroup } from "@mui/material";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
-import { useEffect } from "react";
-import { getAuth, signOut, User } from "firebase/auth";
+import { getAuth, signOut } from "firebase/auth";
 import { useTheme } from "@mui/styles";
 import { AppTheme, LocalUser } from "../models";
 import { useNavigate } from "react-router-dom";

@@ -15,7 +15,6 @@ import {
   Card,
   QueueFeed,
   VideoPlayer,
-  VideoDetails,
   NavBar,
 } from "../components";
 import { CardItem, LocalUser, Video } from "../models";
@@ -35,7 +34,6 @@ import {
   onDisconnect,
 } from "firebase/database";
 import ChatRoom from "../components/ChatRoom";
-import { getFunctions, httpsCallable } from "firebase/functions";
 
 const useStyles = (theme: Theme) => ({
   root: {
