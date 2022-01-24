@@ -15,7 +15,7 @@ import { Video } from "../models";
 import { useState } from "react";
 import { useTheme } from "@mui/styles";
 import AddIcon from "@mui/icons-material/Add";
-import { getDatabase, off, onValue, push, ref } from "firebase/database";
+import { getDatabase, off, onValue, ref } from "firebase/database";
 import { getFunctions, httpsCallable } from "firebase/functions";
 
 const useStyles = (theme: Theme) => ({
@@ -35,21 +35,20 @@ export default function QueueFeed(props: any) {
   const classes = useStyles(useTheme())
   const { room } = props;
 
-  const fetchVideo = httpsCallable(getFunctions(), "fetchVideo");
-  const fetchChannelThumbnail = httpsCallable(getFunctions(), "fetchChannelThumbnail");
+  const addVideoToQueue = httpsCallable(getFunctions(), "addVideoToQueue");
 
   useEffect(() => {
 
     // Queue data listener
-    const queueQuery = ref(getDatabase(), `rooms/${room}/queue`)
+    const queueQuery = ref(getDatabase(), `rooms/${room}/queue/items`)
     onValue(queueQuery, (snapshot) => {
+      let data: Array<Video> = [];
       if (snapshot.val()) {
-        let data: Array<Video> = [];
-        snapshot.forEach((user) => {
-          data.push(user.val());
-        });
-        setQueue([...data]);
+        snapshot.forEach((video) => {
+          data.push(video.val());
+        }); 
       }
+      setQueue([...data]);
     })
 
     return () => {
@@ -66,34 +65,10 @@ export default function QueueFeed(props: any) {
       var match = input.match(regExp);
       if (match && match[2].length === 11) {
         console.log(match[2])
-        await fetchVideo({ query: match[2].toString() }).then(async (result: any) => {
-          const videoData = result.data;
-          if (result.data !== 500) {         
-            await fetchChannelThumbnail({ query: result.data.snippet.channelId.toString() }).then((response) => {
-              const channelData: any = response.data
-              if (response.data !== 500) {
-                const video: Video = {
-                  channelId: videoData.snippet.channelId,
-                  channelThumbnail: channelData.snippet.thumbnails["default"].url,
-                  channelTitle: videoData.snippet.channelTitle,
-                  videoId: videoData.id,
-                  videoThumbnail: videoData.snippet.thumbnails["default"].url,
-                  videoTitle: videoData.snippet.title,
-                }
-                push(ref(getDatabase(), `rooms/${room}/queue`), video)
-              } else {
-                setError("There was an error")
-              }
-            }).catch((error) => {
-              console.log(error)
-              setError("There was an error")
-            })
-          } else {
-            setError("There was an error")
+        await addVideoToQueue({ id: match[2].toString(), room: room }).then((response: any) => {
+          if (response === 500) {
+            setError("Error adding video to queue");
           }
-        }).catch((err) => {
-          setError("There was an error")
-          console.log(err)
         });
       } else {
         setError("Invalid URL")
