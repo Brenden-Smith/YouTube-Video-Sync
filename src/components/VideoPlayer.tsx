@@ -60,10 +60,10 @@ export default function VideoPlayer(props: any) {
     /**
      * Listen for actions from the database
      */
-    const actionQuery = ref(getDatabase(), `rooms/${room}/video/action`) 
+    const actionQuery = ref(getDatabase(), `rooms/${room}/video/action`)
     onValue(actionQuery, (snapshot) => {
       switch (snapshot.val()) {
-        case "play": 
+        case "play":
           player?.playVideo()
           setChanging(false)
           break
@@ -90,7 +90,7 @@ export default function VideoPlayer(props: any) {
       off(actionQuery, "value")
       off(timeQuery, "value")
     }
-  }, [])
+  }, [player, room]);
 
   let opts: Options = {
     playerVars: {
@@ -110,7 +110,7 @@ export default function VideoPlayer(props: any) {
   async function onStateChange(e: { target: YouTubePlayer, data: number }) {
     switch (e.data) {
       case YouTube.PlayerState.PLAYING:
-        await set(ref(getDatabase(), `rooms/${room}/video/action`), "play")
+        set(ref(getDatabase(), `rooms/${room}/video/action`), "play")
         setIsPlaying(true)
         if (timer === null) {
           setTimer(setInterval(() => {
@@ -121,7 +121,7 @@ export default function VideoPlayer(props: any) {
         }
         break
       case YouTube.PlayerState.PAUSED:
-        await set(ref(getDatabase(), `rooms/${room}/video/action`), "pause");
+        set(ref(getDatabase(), `rooms/${room}/video/action`), "pause");
         setIsPlaying(false)
         clearInterval(timer);
         setTimer(null);
@@ -249,9 +249,6 @@ export default function VideoPlayer(props: any) {
                     variant="outlined"
                     color="primary"
                   onClick={() => {
-                    setChanging(true);
-                    clearInterval(timer);
-                    setTimer(null);
                     set(ref(getDatabase(), `rooms/${room}/video/action`), "next")
                   }}>
                     <SkipNextIcon />
