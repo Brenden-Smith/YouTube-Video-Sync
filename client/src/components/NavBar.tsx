@@ -3,10 +3,11 @@ import { CircularProgress, IconButton, Tooltip, Theme } from "@mui/material";
 import { AppBar, Avatar, Toolbar } from "@mui/material";
 import { AvatarGroup } from "@mui/material";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
-import { getAuth, signOut } from "firebase/auth";
+import { signOut } from "firebase/auth";
 import { useTheme } from "@mui/styles";
 import { AppTheme, LocalUser } from "../models";
 import { useNavigate } from "react-router-dom";
+import { auth } from "../firebase/firebase";
 
 const useStyles = (theme: Theme & AppTheme) => ({
   appbar: {
@@ -17,11 +18,11 @@ const useStyles = (theme: Theme & AppTheme) => ({
 export default function NavBar(props: any) {
   const classes: any = useStyles(useTheme());
   const users: Array<LocalUser> = props.users;
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   async function handleSignOut() {
-    await signOut(getAuth());
-    navigate("/")
+    await signOut(auth);
+    navigate("/");
   }
 
   return (
@@ -30,7 +31,7 @@ export default function NavBar(props: any) {
         {users ? (
           <AvatarGroup max={5} spacing="medium">
             {users.map((item: any, index: number) => {
-              console.log(item)
+              console.log(item);
               return (
                 item && (
                   <Tooltip title={item.displayName || ""} key={index}>

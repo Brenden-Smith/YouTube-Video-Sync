@@ -15,8 +15,9 @@ import {
 } from "@mui/material";
 
 import { useNavigate } from "react-router-dom";
-import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { useTheme } from "@mui/styles";
+import { auth } from "../firebase/firebase";
 
 /**
  * Styling for the login screen
@@ -45,14 +46,16 @@ export default function Login() {
   const id = useAppSelector((state) => state.roomId.value);
 
   async function handleLogin() {
-    setLoading(true)
-    await signInWithPopup(getAuth(), new GoogleAuthProvider()).then(() => {
-      setLoading(false)
-      navigate(`/room/${id}`, { replace: true });
-    }).catch((error) => {
-      console.log(error)
-      setLoading(false)
-    })
+    setLoading(true);
+    await signInWithPopup(auth, new GoogleAuthProvider())
+      .then(() => {
+        setLoading(false);
+        navigate(`/room/${id}`, { replace: true });
+      })
+      .catch((error) => {
+        console.log(error);
+        setLoading(false);
+      });
   }
 
   return (
@@ -88,4 +91,4 @@ export default function Login() {
       </Grid>
     </Grid>
   );
-};
+}

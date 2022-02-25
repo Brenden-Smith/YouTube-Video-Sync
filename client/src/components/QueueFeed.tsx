@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect } from "react";
 import {
   Box,
   Divider,
@@ -15,8 +15,9 @@ import { Video } from "../models";
 import { useState } from "react";
 import { useTheme } from "@mui/styles";
 import AddIcon from "@mui/icons-material/Add";
-import { getDatabase, off, onValue, ref } from "firebase/database";
-import { getFunctions, httpsCallable } from "firebase/functions";
+import { off, onValue, ref } from "firebase/database";
+import { httpsCallable } from "firebase/functions";
+import { db, functions } from "../firebase/firebase";
 
 const useStyles = (theme: Theme) => ({
   thumbnail: {
@@ -27,65 +28,65 @@ const useStyles = (theme: Theme) => ({
 });
 
 export default function QueueFeed(props: any) {
-
-  const [queue, setQueue] = useState<Array<Video>>([])
-  const [input, setInput] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const classes = useStyles(useTheme())
+  const [queue, setQueue] = useState<Array<Video>>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const classes = useStyles(useTheme());
   const { room } = props;
 
-  const addVideoToQueue = httpsCallable(getFunctions(), "addVideoToQueue");
+  const addVideoToQueue = httpsCallable(functions, "addVideoToQueue");
 
   useEffect(() => {
-
     // Queue data listener
-    const queueQuery = ref(getDatabase(), `rooms/${room}/queue/items`)
+    const queueQuery = ref(db, `rooms/${room}/queue/items`);
     onValue(queueQuery, (snapshot) => {
       let data: Array<Video> = [];
       if (snapshot.val()) {
         snapshot.forEach((video) => {
           data.push(video.val());
-        }); 
+        });
       }
       setQueue([...data]);
-    })
+    });
 
     return () => {
       off(queueQuery, "value");
-    }
-
+    };
   }, []);
 
   async function handleAddToQueue() {
     if (input !== "") {
-      setLoading(true)
-      setError(null)
-      var regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      setLoading(true);
+      setError(null);
+      var regExp =
+        /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
       var match = input.match(regExp);
       if (match && match[2].length === 11) {
-        console.log(match[2])
-        await addVideoToQueue({ id: match[2].toString(), room: room }).then((response: any) => {
-          if (response === 500) {
-            setError("Error adding video to queue");
+        console.log(match[2]);
+        await addVideoToQueue({ id: match[2].toString(), room: room }).then(
+          (response: any) => {
+            if (response === 500) {
+              setError("Error adding video to queue");
+            }
           }
-        });
+        );
       } else {
-        setError("Invalid URL")
+        setError("Invalid URL");
       }
     } else {
-      setError("Input required")
+      setError("Input required");
     }
-    setInput("")
-    setLoading(false)
+    setInput("");
+    setLoading(false);
   }
 
   /**
    * Render a video queue item
    */
   function QueueCard(props: any) {
-    const { index } = props
-    const video: Video = props.video
+    const { index } = props;
+    const video: Video = props.video;
     return (
       <Grid
         container
@@ -141,7 +142,11 @@ export default function QueueFeed(props: any) {
           endAdornment: (
             <InputAdornment position="end">
               <IconButton onClick={handleAddToQueue} disabled={loading}>
-                {loading ? <CircularProgress color="primary" size={24} /> : <AddIcon />}
+                {loading ? (
+                  <CircularProgress color="primary" size={24} />
+                ) : (
+                  <AddIcon />
+                )}
               </IconButton>
             </InputAdornment>
           ),

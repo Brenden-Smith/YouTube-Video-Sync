@@ -1,41 +1,27 @@
 // Components
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { BrowserRouter as Router } from "react-router-dom";
 import { Route, Routes } from "react-router";
 import { ThemeProvider } from "@mui/material/styles";
 import { PrivateRoute } from "./components";
-import { initializeApp } from "firebase/app";
-import {
-  getToken,
-  initializeAppCheck,
-  ReCaptchaV3Provider,
-} from "firebase/app-check";
-import { FirebaseConfig, RecaptchaConfig } from "./firebase/secret_keys";
 import CreateAppTheme from "./assets/theme";
 
 // Routes
 import { Home, Login, Room } from "./routes";
 import { CssBaseline } from "@mui/material";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "./firebase/firebase";
 
 export default function App() {
   const [mounted, setMounted] = useState(false);
+  const [authenticated, setAuthenticated] = useState(false);
   const theme = CreateAppTheme();
 
-  // Asynchronous loading of resources
+  // Determine current authentication state
   useEffect(() => {
-    const app = initializeApp(FirebaseConfig);
-    const appCheck = initializeAppCheck(app, {
-      provider: new ReCaptchaV3Provider(RecaptchaConfig),
-      isTokenAutoRefreshEnabled: true,
+    onAuthStateChanged(auth, (user) => {
+      setAuthenticated(!!user);
     });
-
-    getToken(appCheck)
-      .then(() => {
-        console.log("Firebase authenticated & initialized");
-      })
-      .catch((error) => {
-        console.log(error);
-      });
     setMounted(true);
   }, []);
 
@@ -47,7 +33,10 @@ export default function App() {
             <Router>
               <Routes>
                 <Route path="/" element={<Home />} />
-                <Route path="/room/:id" element={<PrivateRoute />}>
+                <Route
+                  path="/room/:id"
+                  element={<PrivateRoute auth={authenticated} />}
+                >
                   <Route path="/room/:id" element={<Room />} />
                 </Route>
                 <Route path="/login" element={<Login />} />

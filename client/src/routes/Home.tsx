@@ -54,10 +54,14 @@ export default function Home() {
                 Video Sync
               </Typography>
               <Typography align="center" variant="body1">
-                An application by Brenden Smith created with React, NodeJS, and Firebase
+                Visit my website:{" "}
+                <Link href="https://brenden-smith.com" target="_blank">
+                  brenden-smith.com
+                </Link>
               </Typography>
               <Typography align="center" variant="body1">
-                Visit my website: <Link href="https://brenden-smith.com" target="_blank">brenden-smith.com</Link>
+                An application created with React, NodeJS, and
+                Firebase
               </Typography>
             </Grid>
             <Grid item sx={{ textAlign: "center" }}>

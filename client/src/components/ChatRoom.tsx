@@ -12,9 +12,9 @@ import { AppTheme, CardItem } from "../models";
 import SendIcon from "@mui/icons-material/Send";
 import Card from "./Card";
 import { serverTimestamp } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
 import { useState } from "react";
-import { ref, push, getDatabase } from "firebase/database";
+import { ref, push } from "firebase/database";
+import { auth, db } from "../firebase/firebase";
 
 const useStyles = (theme: Theme & AppTheme) => ({
   root: {
@@ -32,20 +32,22 @@ export default function ChatRoom(props: any) {
   const { room } = props;
 
   async function sendMessage(messageText: string) {
-    const today = new Date()
+    const today = new Date();
     const m = today.getHours() > 12 ? "PM" : "AM";
-    const timeString = `${(today.getHours()) % 12}:${today.getMinutes()} ${m}`;
-    await push(ref(getDatabase(), `messages/${room}`), {
-      displayName: getAuth().currentUser?.displayName,
+    const timeString = `${today.getHours() % 12}:${today.getMinutes()} ${m}`;
+    await push(ref(db, `messages/${room}`), {
+      displayName: auth.currentUser?.displayName,
       message: messageText,
-      photoURL: getAuth().currentUser?.photoURL,
+      photoURL: auth.currentUser?.photoURL,
       createdAt: timeString,
       serverTimestamp: serverTimestamp(),
-    }).then(() => {
-      setMessage("")
-    }).catch((error) => {
-      console.log(error);
-    });
+    })
+      .then(() => {
+        setMessage("");
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   }
 
   return (
@@ -82,7 +84,7 @@ export default function ChatRoom(props: any) {
           </div>
         </List>
       </Grid>
-      <Grid item container sx={{width: "100%"}}>
+      <Grid item container sx={{ width: "100%" }}>
         <TextField
           autoComplete="off"
           fullWidth
@@ -91,9 +93,7 @@ export default function ChatRoom(props: any) {
           InputProps={{
             endAdornment: (
               <InputAdornment position="end">
-                <IconButton
-                  onClick={async () => sendMessage(message)}
-                >
+                <IconButton onClick={async () => sendMessage(message)}>
                   <SendIcon />
                 </IconButton>
               </InputAdornment>

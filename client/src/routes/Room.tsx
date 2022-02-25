@@ -11,12 +11,7 @@ import {
   Tab,
   Theme,
 } from "@mui/material";
-import {
-  Card,
-  QueueFeed,
-  VideoPlayer,
-  NavBar,
-} from "../components";
+import { Card, QueueFeed, VideoPlayer, NavBar } from "../components";
 import { CardItem, LocalUser, Video } from "../models";
 import { TabContext, TabList, TabPanel } from "@mui/lab";
 import "../index.css";
@@ -24,7 +19,6 @@ import { useTheme } from "@mui/styles";
 import { useParams } from "react-router-dom";
 import { getAuth } from "firebase/auth";
 import {
-  getDatabase,
   onValue,
   ref,
   orderByChild,
@@ -34,6 +28,7 @@ import {
   onDisconnect,
 } from "firebase/database";
 import ChatRoom from "../components/ChatRoom";
+import { auth, db } from "../firebase/firebase";
 
 const useStyles = (theme: Theme) => ({
   root: {
@@ -49,7 +44,7 @@ const useStyles = (theme: Theme) => ({
     left: 0,
     bottom: "-20px",
     right: "-20px",
-    overflow: "scroll"
+    overflow: "scroll",
   } as any,
   grid: {
     display: "flex",
@@ -78,74 +73,63 @@ export default function Room() {
 
   // Back-end loading
   useEffect(() => {
-
     // Constants
-    const currentUser = getAuth().currentUser?.uid;
+    const currentUser = auth.currentUser?.uid;
     const room = id;
 
     // Queries
-    const userQuery = ref(getDatabase(), `rooms/${room}/users`);
+    const userQuery = ref(db, `rooms/${room}/users`);
     const messageQuery = query(
-      ref(getDatabase(), `messages/${room}`),
+      ref(db, `messages/${room}`),
       orderByChild("serverTimestamp")
     );
-    const videoQuery = ref(getDatabase(), `rooms/${room}/video`);
+    const videoQuery = ref(db, `rooms/${room}/video`);
 
-    const currentUserRef = ref(getDatabase(), `rooms/${room}/users/${currentUser}`);
+    const currentUserRef = ref(db, `rooms/${room}/users/${currentUser}`);
 
     // Disconnect listener
-    onDisconnect(currentUserRef).remove()
+    onDisconnect(currentUserRef).remove();
 
     // User data listener
-    onValue(
-      userQuery,
-      async (snapshot) => {
-        if (snapshot.val()) {
-          let data: Array<LocalUser> = [];
-          snapshot.forEach((user) => {
-            data.push(user.val());
-          });
-          setUsers([...data]);
-        }
+    onValue(userQuery, async (snapshot) => {
+      if (snapshot.val()) {
+        let data: Array<LocalUser> = [];
+        snapshot.forEach((user) => {
+          data.push(user.val());
+        });
+        setUsers([...data]);
       }
-    );
+    });
 
     // Message data listener
-    onValue(
-      messageQuery,
-      (snapshot) => {
-        if (snapshot.val()) {
-          let data: Array<CardItem> = [];
-          snapshot.forEach((message) => {
-            data.push(message.val());
-          });
-          setMessages([...data]);
-        }
+    onValue(messageQuery, (snapshot) => {
+      if (snapshot.val()) {
+        let data: Array<CardItem> = [];
+        snapshot.forEach((message) => {
+          data.push(message.val());
+        });
+        setMessages([...data]);
       }
-    );
+    });
 
     // Video data listener
-    onValue(
-      videoQuery,
-      (snapshot) => {
-        if (snapshot.val()) {
-          setVideo(snapshot.val());
-        }
+    onValue(videoQuery, (snapshot) => {
+      if (snapshot.val()) {
+        setVideo(snapshot.val());
       }
-    )
+    });
 
     async function initializeRoom() {
-      if (getAuth().currentUser) {
-
+      if (auth.currentUser) {
         // Add current user to room
         await set(currentUserRef, {
-          displayName: getAuth().currentUser?.displayName,
-          photoURL: getAuth().currentUser?.photoURL,
+          displayName: auth.currentUser?.displayName,
+          photoURL: auth.currentUser?.photoURL,
           uid: currentUser,
         }).then(() => {
           setIsMounted(true);
         });
-        await set(ref(getDatabase(), `rooms/${room}/video/action`), "set");
+        await set(ref(db, `rooms/${room}/video/action`), "set");
       }
     }
 
@@ -167,7 +151,7 @@ export default function Room() {
             <Hidden smUp>
               <NavBar users={users} />
             </Hidden>
-            <VideoPlayer room={id} video={video} users={users}/>
+            <VideoPlayer room={id} video={video} users={users} />
           </Grid>
 
           {/* Information Widget */}
@@ -216,7 +200,7 @@ export default function Room() {
 
                 {/* Queue */}
                 <TabPanel value="3" sx={classes.tabPanel}>
-                  <QueueFeed room={id}/>
+                  <QueueFeed room={id} />
                 </TabPanel>
               </TabContext>
             </Paper>
