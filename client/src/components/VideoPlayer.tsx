@@ -37,10 +37,10 @@ const styles = {
 export default function VideoPlayer(props: any) {
   const video: Video = props.video;
   const [player, setPlayer] = useState<YouTubePlayer>();
-  const [volume, setVolume] = useState(0.5);
+  const [volume, setVolume] = useState(25);
+  const [muted, setMuted] = useState(false)
   const [time, setTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [holdState, setHoldState] = useState(false);
   const [changing, setChanging] = useState(false);
   const { room } = props;
 
@@ -101,9 +101,11 @@ export default function VideoPlayer(props: any) {
    */
   useEffect(() => {
     let timer: any;
-    if (player && isPlaying) {
+    if (video.videoId) {
       timer = setInterval(() => {
-        setTime(player?.getCurrentTime() || 0);
+        if (isPlaying) {
+          setTime(player?.getCurrentTime() || 0);
+        }
       }, 100);
     } else {
       setTime(0);
@@ -111,7 +113,7 @@ export default function VideoPlayer(props: any) {
     return () => {
       clearInterval(timer);
     }
-  }, [player, isPlaying])
+  }, [video, player, isPlaying])
 
   let opts: Options = {
     playerVars: {
@@ -218,7 +220,6 @@ export default function VideoPlayer(props: any) {
             onChangeCommitted={async (event, value) => {
               player?.seekTo(value as number, true);
               await set(ref(db, `rooms/${room}/video/time`), value as number);
-              holdState ? player?.playVideo() : player?.pauseVideo();
             }}
             valueLabelDisplay="auto"
             valueLabelFormat={(value) => {
@@ -252,26 +253,28 @@ export default function VideoPlayer(props: any) {
                     <IconButton
                       disabled={changing || !video.videoId}
                       onClick={() => {
-                        if (player?.getVolume() === 0) {
+                        if (muted) {
                           player?.unMute();
+                          setMuted(false);
                         } else {
                           player?.mute();
+                          setMuted(true);
                         }
                       }}
                     >
-                      {player?.getVolume() !== 0 ? (
-                        <VolumeUpIcon />
-                      ) : (
+                      {muted ? (
                         <VolumeOffIcon />
+                      ) : (
+                        <VolumeUpIcon />
                       )}
                     </IconButton>
                   </Grid>
                   <Grid item>
                     <div style={{ width: "100px" }}>
                       <Slider
-                        disabled={changing || !video.videoId}
+                        disabled={changing || !video.videoId || muted}
                         max={100}
-                        value={player?.getVolume() || 0}
+                        value={volume}
                         onChange={(e, value) => {
                           player?.setVolume(value as number);
                           setVolume(value as number);
