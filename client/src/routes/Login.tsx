@@ -1,6 +1,4 @@
 import { useState } from "react";
-import { useAppSelector } from "../store/hooks";
-
 // Assets
 import GoogleLogo from "../assets/icons/GoogleLogo";
 
@@ -13,8 +11,6 @@ import {
   Typography,
   Theme,
 } from "@mui/material";
-
-import { useNavigate } from "react-router-dom";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { useTheme } from "@mui/styles";
 import { auth } from "../firebase/firebase";
@@ -42,20 +38,10 @@ const useStyles = (theme: Theme) => ({
 export default function Login() {
   const [loading, setLoading] = useState(false);
   const classes = useStyles(useTheme());
-  const navigate = useNavigate();
-  const id = useAppSelector((state) => state.roomId.value);
 
   async function handleLogin() {
     setLoading(true);
     await signInWithPopup(auth, new GoogleAuthProvider())
-      .then(() => {
-        setLoading(false);
-        navigate(`/room/${id}`, { replace: true });
-      })
-      .catch((error) => {
-        console.log(error);
-        setLoading(false);
-      });
   }
 
   return (

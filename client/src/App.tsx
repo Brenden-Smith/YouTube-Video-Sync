@@ -3,7 +3,6 @@ import React from "react";
 import { BrowserRouter as Router } from "react-router-dom";
 import { Route, Routes } from "react-router";
 import { ThemeProvider } from "@mui/material/styles";
-import { PrivateRoute } from "./components";
 import CreateAppTheme from "./assets/theme";
 
 // Routes
@@ -19,10 +18,7 @@ export default function App() {
         <Router>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/room/:id" element={<PrivateRoute />}>
-              <Route path="/room/:id" element={<Room />} />
-            </Route>
-            <Route path="/login" element={<Login />} />
+            <Route path="/room/:id" element={<Room />} />
           </Routes>
         </Router>
       </CssBaseline>
