@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-globals */
 import { useEffect, useState } from "react";
 import {
   Box,
@@ -17,7 +18,7 @@ import { TabContext, TabList, TabPanel } from "@mui/lab";
 import "../index.css";
 import { useTheme } from "@mui/styles";
 import { useParams } from "react-router-dom";
-import { getAuth } from "firebase/auth";
+import { getAuth, reload } from "firebase/auth";
 import {
   onValue,
   ref,
@@ -95,7 +96,7 @@ export default function Room() {
       if (snapshot.val()) {
         let data: Array<LocalUser> = [];
         snapshot.forEach((user) => {
-          data.push(user.val());
+          data.push({...user.val(), uid: user.key});
         });
         setUsers([...data]);
       }
@@ -139,7 +140,18 @@ export default function Room() {
       off(userQuery, "value");
       off(messageQuery, "value");
     };
-  }, []);
+  }, [id]);
+
+  useEffect(() => {
+    // If current user is not in "users"
+    if (!users.find((user) => user.uid === auth.currentUser?.uid)) {
+      set(ref(db, `rooms/${id}/users/${auth.currentUser?.uid}`), {
+        displayName: auth.currentUser?.displayName,
+        photoURL: auth.currentUser?.photoURL,
+        uid: auth.currentUser?.uid,
+      });
+    }
+  }, [users, id]);
 
   return isMounted ? (
     <Container sx={classes.root} disableGutters={true} maxWidth={false}>
