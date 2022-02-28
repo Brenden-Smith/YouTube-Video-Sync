@@ -12,7 +12,7 @@ import { FirebaseConfig, RecaptchaConfig } from "./secret_keys";
  
 // App initialization
 const app = initializeApp(FirebaseConfig);
-(window as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+// (window as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
 const appCheck = initializeAppCheck(app, {
   provider: new ReCaptchaV3Provider(RecaptchaConfig),
   isTokenAutoRefreshEnabled: true,
