@@ -73,43 +73,60 @@ export function Queue({
               overflowX: "auto",
             }}
           >
-            {items.map((item, key) => (
+            {items.length > 0 ? (
+              items.map((item, key) => (
+                <motion.div
+                  key={key}
+                  initial={{ opacity: 0, x: -100 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 100 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Card
+                    sx={{
+                      height: "175px",
+                      width: "300px",
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      backgroundImage: `url(${item.videoThumbnail})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                    }}
+                  >
+                    <Stack
+                      sx={{
+                        height: "100%",
+                        width: "100%",
+                        backgroundColor: "rgba(0, 0, 0, 0.5)",
+                        textAlign: "center",
+                      }}
+                      justifyContent="center"
+                      alignItems="center"
+                      spacing={2}
+                    >
+                      <Typography variant="h5">{item.videoTitle}</Typography>
+                      <Typography>{item.channelTitle}</Typography>
+                    </Stack>
+                  </Card>
+                </motion.div>
+              ))
+            ) : (
               <motion.div
-                key={key}
-                initial={{ opacity: 0, x: -100 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 100 }}
-                transition={{ duration: 0.2 }}
-              >
-              <Card
-                sx={{
+                style={{
                   height: "175px",
-                  width: "300px",
+                  width: "100vw",
                   display: "flex",
                   justifyContent: "center",
                   alignItems: "center",
-                  backgroundImage: `url(${item.videoThumbnail})`,
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
                 }}
+                initial={{ opacity: 0}}
+                animate={{ opacity: 1}}
+                exit={{ opacity: 0 }}
               >
-                <Stack
-                  sx={{
-                    height: "100%",
-                    width: "100%",
-                    backgroundColor: "rgba(0, 0, 0, 0.5)",
-                    textAlign: "center",
-                  }}
-                  justifyContent="center"
-                  alignItems="center"
-                  spacing={2}
-                >
-                  <Typography variant="h5">{item.videoTitle}</Typography>
-                  <Typography>{item.channelTitle}</Typography>
-                </Stack>
-              </Card>
+                <Typography variant="h5">No items in queue</Typography>
               </motion.div>
-            ))}
+            )}
           </Stack>
         </AnimatePresence>
         <Stack

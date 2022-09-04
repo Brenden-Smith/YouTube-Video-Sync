@@ -1,16 +1,28 @@
+import { CircularProgress } from "@mui/material";
 import { getDatabase, ref, set } from "firebase/database";
 import { useEffect } from "react";
 import YouTube, { YouTubeProps } from "react-youtube";
 import { useRoom } from "../context";
 
 export function Player() {
-  const { setPlaying, setPlayer, setDuration, setTime, playing, player, data, id } = useRoom();
+  const {
+    setPlaying,
+    setPlayer,
+    setDuration,
+    setTime,
+    playing,
+    player,
+    data,
+    id,
+    changing,
+    setChanging,
+  } = useRoom();
   const opts: YouTubeProps["opts"] = {
     height: window.innerHeight,
     width: window.innerWidth,
     playerVars: {
       start: 0,
-      autoplay: 0,
+      autoplay: 1,
       enablejsapi: 1,
       modestbranding: 1,
       controls: 0,
@@ -18,16 +30,62 @@ export function Player() {
       rel: 0,
     },
   };
-  const videoId = data?.child("video/videoId").val() || null;
-  console.log(videoId);
-  const action = data?.child("video/action").val() || "";
+  const video = data?.child("video").child("videoId").val();
+  const action = data?.child("video").child("action").val();
+  const time = data?.child("video").child("time").val();
+
+  /**
+   * Keep user in sync with database time
+   */
+  useEffect(() => {
+    if (player && playing) {
+      if (player.getCurrentTime() !== time) {
+        player.seekTo(time, true);
+      }
+    }
+  }, [time, player, playing]);
+
+  /**
+   * Listen for action changes in database
+   */
+  useEffect(() => {
+    if (player) {
+      try {
+        switch (action) {
+          case "play":
+            !playing && player?.playVideo();
+            setChanging(false);
+            break;
+          case "pause":
+            playing && player?.pauseVideo();
+            setChanging(false);
+            break;
+          case "set":
+            setChanging(false);
+            setTimeout(() => {
+              set(
+                ref(getDatabase(), `rooms/${id}/video/time`),
+                player?.getCurrentTime() || 0
+              );
+            }, 500);
+            break;
+          case "next":
+            player?.pauseVideo();
+            setChanging(true);
+            break;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, [player, id, action, playing]);
 
   /**
    * Handle video player tracking
    */
   useEffect(() => {
     let timer: any;
-    if (videoId) {
+    if (video) {
       timer = setInterval(() => {
         playing && setTime(player?.getCurrentTime() as any);
       }, 100);
@@ -37,51 +95,62 @@ export function Player() {
     return () => {
       clearInterval(timer);
     };
-  }, [player, playing, setTime, videoId]);
+  }, [player, playing, setTime, video]);
 
-  useEffect(() => {
-    switch (action) {
-      case "play":
-        player?.playVideo();
-        break;
-      case "pause":
-        player?.pauseVideo();
-        break;
-      case "set":
-        setTimeout(() => {
-          set(
-            ref(getDatabase(), `rooms/${id}/video/time`),
-            player?.getCurrentTime() || 0
-          );
-        }, 500);
-        break;
-      case "next":
-        player?.pauseVideo();
-        break;
-    }
-  }, [action, player, id]);
-
-  return videoId ? (
-    <YouTube
-      id="player"
-      videoId={videoId}
-      onStateChange={(e) => {
-        switch (e.data) {
-          case YouTube.PlayerState.PLAYING:
-            setPlaying(true);
-            break;
-          case YouTube.PlayerState.PAUSED:
-            setPlaying(false);
-            break;
-        }
-      }}
-      onReady={(e) => {
-        setPlayer(e.target);
-        setDuration(e.target.getDuration() as any);
-      }}
-      opts={opts}
-    />
+  return video ? (
+    changing ? (
+      <div
+        style={{
+          backgroundColor: "black",
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+          }}
+        >
+          <CircularProgress />
+        </div>
+      </div>
+    ) : (
+      <YouTube
+        id="video-player"
+        videoId={video}
+        onStateChange={(e) => {
+          switch (e.data) {
+            case YouTube.PlayerState.PLAYING:
+              setPlaying(true);
+              set(ref(getDatabase(), `rooms/${id}/video/action`), "play");
+              break;
+            case YouTube.PlayerState.PAUSED:
+              setPlaying(false);
+              set(ref(getDatabase(), `rooms/${id}/video/action`), "pause");
+              break;
+          }
+        }}
+        onEnd={() => {
+          if (!changing) {
+            set(ref(getDatabase(), `rooms/${id}/video/action`), "next");
+          }
+        }}
+        onReady={(e) => {
+          setPlayer(e.target);
+          setDuration(e.target.getDuration() as any);
+        }}
+        opts={opts}
+      />
+    )
   ) : (
-    "No video"
-  )
+    <div>
+      <h1>No videos in queue</h1>
+    </div>
+  );
 }

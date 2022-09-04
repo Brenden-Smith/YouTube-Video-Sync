@@ -51,13 +51,6 @@ export function Component() {
           height: "84%",
           zIndex: 2,
         }}
-        className="passthrough"
-        onClick={() => {
-          if (player) {
-            playing ? player.pauseVideo() : player.playVideo();
-            setPlaying(!playing);
-          }
-        }}
       />
 
       <main className="root">
@@ -82,6 +75,7 @@ export function Component() {
           position: "fixed",
           bottom: 0,
           width: "100vw",
+          zIndex: 3
         }}
       >
         <Controls />

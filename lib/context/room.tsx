@@ -17,6 +17,12 @@ type Room = {
   visible: boolean;
   setVisible: (visible: boolean) => void;
   data: DataSnapshot | undefined;
+  changing: boolean;
+  setChanging: (changing: boolean) => void;
+  muted: boolean;
+  setMuted: (muted: boolean) => void;
+  volume: number;
+  setVolume: (volume: number) => void;
 };
 
 export const RoomContext = createContext<Room>({} as Room);
@@ -27,17 +33,21 @@ export const RoomProvider = ({ children, id }: { children: ReactNode, id: string
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [visible, setVisible] = useState(false);
+  const [changing, setChanging] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const [volume, setVolume] = useState(25);
   const [data] = useObject(ref(getDatabase(), `rooms/${id}`));
+  const action = data?.val().video.action;
 
-  // useEffect(() => {
-  //   const userRef = ref(getDatabase(), `rooms/${id}/users/${getAuth().currentUser?.uid}`);
-  //   set(userRef, {
-  //     displayName: getAuth().currentUser?.displayName,
-  //     photoURL: getAuth().currentUser?.photoURL,
-  //     uid: getAuth().currentUser?.uid,
-  //   });
-  //   onDisconnect(userRef).remove();
-  // }, [id]);
+  useEffect(() => {
+    const userRef = ref(getDatabase(), `rooms/${id}/users/${getAuth().currentUser?.uid}`);
+    set(userRef, {
+      displayName: getAuth().currentUser?.displayName,
+      photoURL: getAuth().currentUser?.photoURL,
+      uid: getAuth().currentUser?.uid,
+    });
+    onDisconnect(userRef).remove();
+  }, [id]);
 
   return (
     <RoomContext.Provider
@@ -53,7 +63,13 @@ export const RoomProvider = ({ children, id }: { children: ReactNode, id: string
         setDuration,
         visible,
         setVisible,
-        data
+        data,
+        changing,
+        setChanging,
+        muted,
+        setMuted,
+        volume,
+        setVolume,
       }}
     >
       {data && children}

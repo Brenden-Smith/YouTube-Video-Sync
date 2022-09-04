@@ -1,9 +1,4 @@
-import {
-  Avatar,
-  AvatarGroup,
-  IconButton,
-  Stack,
-} from "@mui/material";
+import { Avatar, AvatarGroup, IconButton, Stack, Tooltip } from "@mui/material";
 import { motion, AnimatePresence } from "framer-motion";
 import AddToQueueIcon from "@mui/icons-material/AddToQueue";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
@@ -11,11 +6,14 @@ import { useRoom } from "../../context";
 import { useState } from "react";
 import { Queue } from "./Queue";
 import { LocalUser } from "../../models";
+import { signOut, getAuth } from "firebase/auth";
+import { useRouter } from "next/router";
 
 export function Header() {
   const { visible, data } = useRoom();
   const [open, setOpen] = useState(false);
-  const users: Array<LocalUser> = data?.child("users").val() || [];
+  const users: Record<string, LocalUser> = data?.child("users").val() || {};
+  const router = useRouter();
 
   return (
     <>
@@ -33,21 +31,31 @@ export function Header() {
             }}
           >
             <Stack direction="row" spacing={2}>
-              <IconButton onClick={() => setOpen(true)}>
-                <AddToQueueIcon />
-              </IconButton>
+              <Tooltip title="Queue">
+                <IconButton onClick={() => setOpen(true)}>
+                  <AddToQueueIcon />
+                </IconButton>
+              </Tooltip>
               <AvatarGroup>
-                {users.map((user) => (
-                  <Avatar
-                    key={user.uid}
-                    alt={user.displayName}
-                    src={user.photoURL}
-                  />
+                {Object.keys(users).map((user, key) => (
+                  <Tooltip title={users[user].displayName} key={key}>
+                    <Avatar
+                      alt={users[user].displayName}
+                      src={users[user].photoURL}
+                    />
+                  </Tooltip>
                 ))}
               </AvatarGroup>
-              <IconButton>
-                <ExitToAppIcon />
-              </IconButton>
+              <Tooltip title="Sign Out">
+                <IconButton
+                  onClick={async () => {
+                    await signOut(getAuth());
+                    router.push("/");
+                  }}
+                >
+                  <ExitToAppIcon />
+                </IconButton>
+              </Tooltip>
             </Stack>
           </motion.div>
         )}
