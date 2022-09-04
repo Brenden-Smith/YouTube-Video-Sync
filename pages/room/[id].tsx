@@ -13,10 +13,11 @@ const Instance = dynamic(
 
 export default function Room() {
   const router = useRouter();
+  const title = "Video Sync | " + router.query.id;
   return (
     <div>
       <Head>
-        <title>Video Sync | {router.query.id}</title>
+        <title>{title}</title>
       </Head>
       <Instance />
     </div>
