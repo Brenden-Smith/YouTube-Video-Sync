@@ -19,7 +19,7 @@ export function Instance() {
 }
 
 export function Component() {
-  const { setVisible, playing, player, setPlaying } = useRoom();
+  const { setVisible } = useRoom();
 
   useEffect(() => {
     let timer: any = null;
