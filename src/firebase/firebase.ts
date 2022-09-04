@@ -8,17 +8,24 @@ import {
 import { connectAuthEmulator, getAuth } from "firebase/auth";
 import { connectDatabaseEmulator, getDatabase } from "firebase/database";
 import { connectFunctionsEmulator, getFunctions } from "firebase/functions";
-import { FirebaseConfig, RecaptchaConfig } from "./secret_keys";
- 
-// App initialization
-const app = initializeApp(FirebaseConfig);
-// (window as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-const appCheck = initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider(RecaptchaConfig),
-  isTokenAutoRefreshEnabled: true,
-});
 
-getToken(appCheck)
+const app = initializeAppCheck(
+  initializeApp({
+    apiKey: "AIzaSyBJh_vBCy-Uw-87Wr8U_OJXsskwNkbLW7w",
+    authDomain: "video-sync-9901a.firebaseapp.com",
+    projectId: "video-sync-9901a",
+    storageBucket: "video-sync-9901a.appspot.com",
+    messagingSenderId: "230138385812",
+    appId: "1:230138385812:web:1efac48907064740742b81",
+    measurementId: "G-NGFVWWQ35Z",
+  }),
+  {
+    provider: new ReCaptchaV3Provider("6LeawxoeAAAAAASQoIUmXg4gkAMS1jJ9jKYBhp9E"),
+    isTokenAutoRefreshEnabled: true,
+  }
+);
+
+getToken(app)
   .then(() => {
     console.log("Firebase authenticated & initialized");
   })

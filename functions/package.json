@@ -1,5 +1,6 @@
 {
   "name": "functions",
+  "module": "functions",
   "scripts": {
     "build": "tsc",
     "serve": "npm run build && firebase emulators:start --only functions",
