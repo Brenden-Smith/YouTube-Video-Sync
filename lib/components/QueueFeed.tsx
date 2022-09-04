@@ -13,11 +13,11 @@ import {
 } from "@mui/material";
 import { Video } from "../models";
 import { useState } from "react";
-import { useTheme } from "@mui/styles";
+import { useTheme } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import { off, onValue, ref } from "firebase/database";
-import { httpsCallable } from "firebase/functions";
-import { db, functions } from "../firebase/firebase";
+import { getDatabase, off, onValue, ref } from "firebase/database";
+import { getFunctions, httpsCallable } from "firebase/functions";
+import Image from "next/image";
 
 const useStyles = (theme: Theme) => ({
   thumbnail: {
@@ -35,11 +35,11 @@ export default function QueueFeed(props: any) {
   const classes = useStyles(useTheme());
   const { room } = props;
 
-  const addVideoToQueue = httpsCallable(functions, "addVideoToQueue");
+  const addVideoToQueue = httpsCallable(getFunctions(), "addVideoToQueue");
 
   useEffect(() => {
     // Queue data listener
-    const queueQuery = ref(db, `rooms/${room}/queue/items`);
+    const queueQuery = ref(getDatabase(), `rooms/${room}/queue/items`);
     onValue(queueQuery, (snapshot) => {
       let data: Array<Video> = [];
       if (snapshot.val()) {
@@ -101,7 +101,7 @@ export default function QueueFeed(props: any) {
           </Typography>
         </Grid>
         <Grid item alignItems="left">
-          <img
+          <Image
             src={video.videoThumbnail}
             style={classes.thumbnail}
             alt="thumbnail"

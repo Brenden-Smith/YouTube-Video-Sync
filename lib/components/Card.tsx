@@ -1,6 +1,5 @@
 import React from "react";
-import { Avatar, Box, Grid, Typography, Theme } from "@mui/material";
-import { useTheme } from "@mui/styles";
+import { Avatar, Box, Grid, Typography, Theme, useTheme } from "@mui/material";
 
 import { AppTheme, CardItem } from "../models";
 

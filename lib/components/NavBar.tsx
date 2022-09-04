@@ -1,13 +1,11 @@
 import React from "react";
-import { CircularProgress, IconButton, Tooltip, Theme } from "@mui/material";
+import { CircularProgress, IconButton, Tooltip, Theme, useTheme } from "@mui/material";
 import { AppBar, Avatar, Toolbar } from "@mui/material";
 import { AvatarGroup } from "@mui/material";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
-import { signOut } from "firebase/auth";
-import { useTheme } from "@mui/styles";
+import { getAuth, signOut } from "firebase/auth";
 import { AppTheme, LocalUser } from "../models";
-import { useNavigate } from "react-router-dom";
-import { auth } from "../firebase/firebase";
+import { useRouter } from "next/router";
 
 const useStyles = (theme: Theme & AppTheme) => ({
   appbar: {
@@ -18,11 +16,11 @@ const useStyles = (theme: Theme & AppTheme) => ({
 export default function NavBar(props: any) {
   const classes: any = useStyles(useTheme());
   const users: Array<LocalUser> = props.users;
-  const navigate = useNavigate();
+  const router = useRouter();
 
   async function handleSignOut() {
-    await signOut(auth);
-    navigate("/");
+    await signOut(getAuth());
+    router.push("/");
   }
 
   return (

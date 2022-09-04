@@ -13,8 +13,8 @@ import SendIcon from "@mui/icons-material/Send";
 import Card from "./Card";
 import { serverTimestamp } from "firebase/firestore";
 import { useState } from "react";
-import { ref, push } from "firebase/database";
-import { auth, db } from "../firebase/firebase";
+import { ref, push, getDatabase } from "firebase/database";
+import { getAuth } from "firebase/auth";
 
 const useStyles = (theme: Theme & AppTheme) => ({
   root: {
@@ -35,10 +35,10 @@ export default function ChatRoom(props: any) {
     const today = new Date();
     const m = today.getHours() > 12 ? "PM" : "AM";
     const timeString = `${today.getHours() % 12}:${today.getMinutes()} ${m}`;
-    await push(ref(db, `messages/${room}`), {
-      displayName: auth.currentUser?.displayName,
+    await push(ref(getDatabase(), `messages/${room}`), {
+      displayName: getAuth().currentUser?.displayName,
       message: messageText,
-      photoURL: auth.currentUser?.photoURL,
+      photoURL: getAuth().currentUser?.photoURL,
       createdAt: timeString,
       serverTimestamp: serverTimestamp(),
     })

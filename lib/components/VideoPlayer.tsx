@@ -5,19 +5,18 @@ import {
   IconButton,
   Slider,
 } from "@mui/material";
-import { off, onValue, ref, set } from "firebase/database";
+import { getDatabase, ref, set } from "firebase/database";
 import { useEffect, useState } from "react";
-import YouTube, { Options } from "react-youtube";
+import YouTube, {YouTubeProps}  from "react-youtube";
 import { YouTubePlayer } from "youtube-player/dist/types";
 import "../index.css";
 import PauseIcon from "@mui/icons-material/Pause";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import SkipNextIcon from "@mui/icons-material/SkipNext";
-import { VideoDetails } from "../components";
+import { VideoDetails } from ".";
 import VolumeUpIcon from "@mui/icons-material/VolumeUp";
 import VolumeOffIcon from "@mui/icons-material/VolumeOff";
 import { Video } from "../models";
-import { db } from "../firebase/firebase";
 
 const styles = {
   container: {
@@ -44,13 +43,19 @@ export default function VideoPlayer(props: any) {
   const [changing, setChanging] = useState(false);
   const { room } = props;
 
+  const [maxDuration, setMaxDuration] = useState(0);
+
+  useEffect(() => {
+    player?.getDuration().then((duration) => setMaxDuration(duration));
+  }, [player])
+
   // Firebase useEffect
   useEffect(() => {
 
     /**
      * Keep user in sync with database time
      */
-    const timeQuery = ref(db, `rooms/${room}/video/time`);
+    const timeQuery = ref(getDatabase(), `rooms/${room}/video/time`);
     onValue(timeQuery, (snapshot) => {
       if (player) {
         console.log(snapshot.val());
@@ -63,7 +68,7 @@ export default function VideoPlayer(props: any) {
     /**
      * Listen for actions from the database
      */
-    const actionQuery = ref(db, `rooms/${room}/video/action`);
+    const actionQuery = ref(getDatabase(), `rooms/${room}/video/action`);
     onValue(actionQuery, (snapshot) => {
       switch (snapshot.val()) {
         case "play":
@@ -78,7 +83,7 @@ export default function VideoPlayer(props: any) {
           setChanging(false);
           setTimeout(() => {
             set(
-              ref(db, `rooms/${room}/video/time`),
+              ref(getDatabase(), `rooms/${room}/video/time`),
               player?.getCurrentTime() || 0
             );
           }, 500);
@@ -103,9 +108,9 @@ export default function VideoPlayer(props: any) {
     let timer: any;
     if (video.videoId) {
       timer = setInterval(() => {
-        if (isPlaying) {
-          setTime(player?.getCurrentTime() || 0);
-        }
+        isPlaying && player?.getCurrentTime().then((val) => {
+          setTime(val);
+        });
       }, 100);
     } else {
       setTime(0);
@@ -115,7 +120,7 @@ export default function VideoPlayer(props: any) {
     }
   }, [video, player, isPlaying])
 
-  let opts: Options = {
+  let opts: YouTubeProps['opts'] = {
     playerVars: {
       start: 0,
       autoplay: 1,
@@ -134,11 +139,11 @@ export default function VideoPlayer(props: any) {
     switch (e.data) {
       case YouTube.PlayerState.PLAYING:
         setIsPlaying(true);
-        set(ref(db, `rooms/${room}/video/action`), "play");
+        set(ref(getDatabase(), `rooms/${room}/video/action`), "play");
         break;
       case YouTube.PlayerState.PAUSED:
         setIsPlaying(false);
-        set(ref(db, `rooms/${room}/video/action`), "pause");
+        set(ref(getDatabase(), `rooms/${room}/video/action`), "pause");
         break;
     }
   }
@@ -149,11 +154,11 @@ export default function VideoPlayer(props: any) {
         {video.videoId ? (
           <YouTube
             id="player"
-            containerClassName="youtubeContainer"
+            className="youtubeContainer"
             videoId={video.videoId}
             onEnd={() => {
               if (!changing) {
-                set(ref(db, `rooms/${room}/video/action`), "next");
+                set(ref(getDatabase(), `rooms/${room}/video/action`), "next");
               }
             }}
             onStateChange={(e) => onStateChange(e)}
@@ -209,7 +214,7 @@ export default function VideoPlayer(props: any) {
         >
           <Slider
             disabled={changing || !video.videoId}
-            max={player?.getDuration()}
+            max={maxDuration}
             value={time}
             size="small"
             onChange={(e, value) => {
@@ -219,7 +224,7 @@ export default function VideoPlayer(props: any) {
             }}
             onChangeCommitted={async (event, value) => {
               player?.seekTo(value as number, true);
-              await set(ref(db, `rooms/${room}/video/time`), value as number);
+              await set(ref(getDatabase(), `rooms/${room}/video/time`), value as number);
             }}
             valueLabelDisplay="auto"
             valueLabelFormat={(value) => {
@@ -302,7 +307,7 @@ export default function VideoPlayer(props: any) {
                   variant="outlined"
                   color="primary"
                   onClick={() => {
-                    set(ref(db, `rooms/${room}/video/action`), "next");
+                    set(ref(getDatabase(), `rooms/${room}/video/action`), "next");
                   }}
                 >
                   <SkipNextIcon />

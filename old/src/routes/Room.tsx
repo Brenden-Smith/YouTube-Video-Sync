@@ -13,10 +13,10 @@ import {
   Theme,
 } from "@mui/material";
 import { Card, QueueFeed, VideoPlayer, NavBar } from "../components";
-import { CardItem, LocalUser, Video } from "../models";
+import { CardItem, LocalUser, Video } from "../../../lib/models";
 import { TabContext, TabList, TabPanel } from "@mui/lab";
 import "../index.css";
-import { useTheme } from "@mui/styles";
+import { useTheme } from "@mui/material";
 import { useParams } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
 import {
@@ -146,7 +146,6 @@ export default function Room() {
     } else {
       setIsMounted(false);
     }
-    
   }, [id, loggedIn]);
 
   useEffect(() => {
@@ -217,13 +216,13 @@ export default function Room() {
                     <List>
                       {video?.comments
                         ? video.comments.map((item: CardItem, key: any) => {
-                          return (
-                            <>
-                              <Card item={item} key={key} />
-                              <Divider />
-                            </>
-                          );
-                        })
+                            return (
+                              <>
+                                <Card item={item} key={key} />
+                                <Divider />
+                              </>
+                            );
+                          })
                         : null}
                     </List>
                   </TabPanel>
@@ -254,4 +253,4 @@ export default function Room() {
   ) : (
     <Login />
   );
-};
+}

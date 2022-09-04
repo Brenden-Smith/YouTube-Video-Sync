@@ -12,7 +12,7 @@ import {
   Theme,
 } from "@mui/material";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { useTheme } from "@mui/styles";
+import { useTheme } from "@mui/material";
 import { auth } from "../firebase/firebase";
 
 /**
@@ -41,7 +41,7 @@ export default function Login() {
 
   async function handleLogin() {
     setLoading(true);
-    await signInWithPopup(auth, new GoogleAuthProvider())
+    await signInWithPopup(auth, new GoogleAuthProvider());
   }
 
   return (

@@ -1,18 +1,18 @@
-import React from "react"
+import React from "react";
 import { Avatar, Box, Container, Grid, Typography } from "@mui/material";
 import { AppTheme, Video } from "../models";
-import { useTheme } from "@mui/styles";
+import { useTheme } from "@mui/material";
 import { Theme } from "@mui/material";
 
 export default function VideoDetails(props: any) {
   const theme: Theme & AppTheme = useTheme();
-  const video: Video = props.video
+  const video: Video = props.video;
 
   return (
     <>
       <Grid container direction="row" spacing={2}>
         <Grid item>
-          {video.channelThumbnail &&
+          {video.channelThumbnail && (
             <Avatar
               style={{
                 background: theme.palette.background.avatar,
@@ -21,9 +21,11 @@ export default function VideoDetails(props: any) {
               }}
               src={video.channelThumbnail}
             >
-              {video.channelThumbnail === "" ? null : <Box color="text.primary">T</Box>}
+              {video.channelThumbnail === "" ? null : (
+                <Box color="text.primary">T</Box>
+              )}
             </Avatar>
-          }
+          )}
         </Grid>
         <Grid item>
           <Container disableGutters={true}>
@@ -32,7 +34,7 @@ export default function VideoDetails(props: any) {
                 {video.videoTitle}
               </Box>
             </Typography>
-            <Typography component="span"variant="body1">
+            <Typography component="span" variant="body1">
               <Box color="text.primary">{video.channelTitle}</Box>
             </Typography>
           </Container>
@@ -40,4 +42,4 @@ export default function VideoDetails(props: any) {
       </Grid>
     </>
   );
-};
+}
