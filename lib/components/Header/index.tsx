@@ -8,6 +8,7 @@ import { Queue } from "./Queue";
 import { LocalUser } from "../../models";
 import { signOut, getAuth } from "firebase/auth";
 import { useRouter } from "next/router";
+import Image from "next/image";
 
 export function Header() {
   const { visible, data } = useRoom();
@@ -39,10 +40,13 @@ export function Header() {
               <AvatarGroup>
                 {Object.keys(users).map((user, key) => (
                   <Tooltip title={users[user].displayName} key={key}>
-                    <Avatar
-                      alt={users[user].displayName}
-                      src={users[user].photoURL}
-                    />
+                    <Avatar>
+                      <Image
+                        src={users[user].photoURL}
+                        layout="fill"
+                        alt={users[user].displayName}
+                      />
+                    </Avatar>
                   </Tooltip>
                 ))}
               </AvatarGroup>

@@ -16,6 +16,7 @@ export function Player() {
     id,
     changing,
     setChanging,
+    volume
   } = useRoom();
   const opts: YouTubeProps["opts"] = {
     height: window.innerHeight,
@@ -144,6 +145,7 @@ export function Player() {
         onReady={(e) => {
           setPlayer(e.target);
           setDuration(e.target.getDuration() as any);
+          e.target.setVolume(volume);
         }}
         opts={opts}
       />

@@ -9,6 +9,7 @@ firebase-debug.*.log*
 
 # Next
 .next/
+.env.local
 
 # Firebase cache
 .firebase/

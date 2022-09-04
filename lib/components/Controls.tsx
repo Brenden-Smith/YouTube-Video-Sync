@@ -149,7 +149,7 @@ export function Controls() {
                 valueLabelFormat={(value) => formatTime(value)}
               />
               <IconButton
-                disabled={changing || !video.videoId}
+                disabled={changing || !video?.videoId}
                 onClick={() => {
                   if (muted) {
                     player?.unMute();
@@ -163,7 +163,7 @@ export function Controls() {
                 {muted ? <VolumeOffIcon /> : <VolumeUpIcon />}
               </IconButton>
                 <Slider
-                  disabled={changing || !video.videoId || muted}
+                  disabled={changing || !video?.videoId || muted}
                   max={100}
                   value={volume}
                   onChange={(e, value) => {

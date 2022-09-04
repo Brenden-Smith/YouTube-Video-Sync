@@ -7,11 +7,10 @@ import {
   responsiveFontSizes,
   ThemeProvider,
 } from "@mui/material";
-import { AppContext, AppProvider } from "../lib/context/app";
-import { useEffect } from "react";
-import { connectAuthEmulator, getAuth } from "firebase/auth";
-import { connectFunctionsEmulator, getFunctions } from "firebase/functions";
-import { connectDatabaseEmulator, getDatabase } from "firebase/database";
+// import { useEffect } from "react";
+// import { connectAuthEmulator, getAuth } from "firebase/auth";
+// import { connectFunctionsEmulator, getFunctions } from "firebase/functions";
+// import { connectDatabaseEmulator, getDatabase } from "firebase/database";
 
 export default function App({ Component, pageProps }: AppProps) {
 
@@ -34,30 +33,7 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline>
-        <AppProvider>
-          <AppContext.Consumer>
-            {({ loading }) =>
-              loading && (
-                <div
-                  style={{
-                    position: "absolute",
-                    width: "100vw",
-                    height: "100vh",
-                    textAlign: "center",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    display: "flex",
-                    zIndex: 1000000,
-                    backgroundColor: "rgba(0, 0, 0, 0.5)",
-                  }}
-                >
-                  <CircularProgress sx={{ color: "white" }} />
-                </div>
-              )
-            }
-          </AppContext.Consumer>
-          <Component {...pageProps} />
-        </AppProvider>
+        <Component {...pageProps} />
       </CssBaseline>
     </ThemeProvider>
   );

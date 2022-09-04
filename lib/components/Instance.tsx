@@ -1,31 +1,21 @@
 import { CircularProgress } from "@mui/material";
 import { getAuth } from "firebase/auth";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { RoomProvider, useRoom } from "../context";
 import { Controls } from "./Controls";
 import { Header } from "./Header";
 import { Player } from "./Player";
-export function Instance() {
 
+export function Instance() {
   const router = useRouter();
   const { id } = router.query;
-  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    if (!getAuth().currentUser) router.push("/login?redirect=" + encodeURIComponent("/room/" + id));
-    else setMounted(true);
-  }, [router, id]);
-
-  return mounted ? (
+  return (
     <RoomProvider id={id as string}>
       <Component />
     </RoomProvider>
-  ) : (
-    <div className="root">
-      <CircularProgress sx={{ color: "white" }} />
-    </div>
-  )
+  );
 }
 
 export function Component() {
@@ -75,7 +65,7 @@ export function Component() {
           position: "fixed",
           bottom: 0,
           width: "100vw",
-          zIndex: 3
+          zIndex: 3,
         }}
       >
         <Controls />

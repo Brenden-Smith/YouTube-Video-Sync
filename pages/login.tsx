@@ -1,21 +1,13 @@
-import { useState } from "react";
-// Assets
-import GoogleLogo from "../lib/assets/icons/GoogleLogo";
-
-// Components
 import {
-  Button,
-  CircularProgress,
   Grid,
   Paper,
   Typography,
   Theme,
   useTheme,
 } from "@mui/material";
-import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { useApp } from "../lib/context/app";
 import Head from "next/head";
-import { useRouter } from "next/router";
+import dynamic from "next/dynamic";
+import { SSRLoading } from "../lib/components/SSRLoading";
 
 const useStyles = (theme: Theme) => ({
   root: {
@@ -32,20 +24,12 @@ const useStyles = (theme: Theme) => ({
 });
 
 export default function Login() {
-  const { setLoading } = useApp();
   const classes = useStyles(useTheme());
-  const router = useRouter();
 
-  console.log(router.query);
-
-  async function handleLogin() {
-    setLoading(true);
-    const redirect = router.query.redirect === undefined ? "/" : router.query.redirect as string;
-    await signInWithPopup(getAuth(), new GoogleAuthProvider())
-      .then(() => router.replace(redirect))
-      .catch((error) => console.log(error));
-    setLoading(false);
-  }
+  const LoginButton = dynamic(() => import("../lib/components/LoginButton").then((mod) => mod.LoginButton), {
+    ssr: false,
+    loading: SSRLoading
+  });
 
   return (
     <div>
@@ -69,13 +53,7 @@ export default function Login() {
                   </Typography>
                 </Grid>
                 <Grid item sx={{ textAlign: "center" }}>
-                  <Button
-                    variant="contained"
-                    startIcon={<GoogleLogo />}
-                    onClick={() => handleLogin()}
-                  >
-                    Login with Google
-                  </Button>
+                  <LoginButton />
                 </Grid>
               </Grid>
             </Paper>
