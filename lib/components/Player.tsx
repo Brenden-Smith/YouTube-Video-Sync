@@ -78,7 +78,7 @@ export function Player() {
         console.error(e);
       }
     }
-  }, [player, id, action, playing]);
+  }, [player, id, action, playing, setChanging]);
 
   /**
    * Handle video player tracking
