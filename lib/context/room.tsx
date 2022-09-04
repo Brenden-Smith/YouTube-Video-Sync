@@ -20,8 +20,6 @@ import { useRouter } from "next/router";
 
 type Room = {
   id: string;
-  player: YouTubePlayer | undefined;
-  setPlayer: (player: YouTubePlayer) => void;
   playing: boolean;
   setPlaying: (playing: boolean) => void;
   time: number;
@@ -48,7 +46,6 @@ export const RoomProvider = ({
   children: ReactNode;
   id: string;
 }) => {
-  const [player, setPlayer] = useState<YouTubePlayer>();
   const [playing, setPlaying] = useState(false);
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -83,8 +80,6 @@ export const RoomProvider = ({
     <RoomContext.Provider
       value={{
         id,
-        player,
-        setPlayer,
         playing,
         setPlaying,
         time,

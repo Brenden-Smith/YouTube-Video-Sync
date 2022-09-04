@@ -8,9 +8,9 @@ import {
   Typography,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import { useApp, useRoom } from "../../context";
+import { useRoom } from "../../context";
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Video } from "../../models";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -26,7 +26,8 @@ export function Queue({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const items: Array<Video> = data?.child("queue").child("items").val() || [];
+  const items: Record<string, Video> =
+    data?.child("queue").child("items").val() || {};
 
   async function addToQueue() {
     if (input !== "") {
@@ -73,8 +74,8 @@ export function Queue({
               overflowX: "auto",
             }}
           >
-            {items.length > 0 ? (
-              items.map((item, key) => (
+            {Object.keys(items).length > 0 ? (
+              Object.keys(items).map((item, key) => (
                 <motion.div
                   key={key}
                   initial={{ opacity: 0, x: -100 }}
@@ -89,7 +90,7 @@ export function Queue({
                       display: "flex",
                       justifyContent: "center",
                       alignItems: "center",
-                      backgroundImage: `url(${item.videoThumbnail})`,
+                      backgroundImage: `url(${items[item].videoThumbnail})`,
                       backgroundSize: "cover",
                       backgroundPosition: "center",
                     }}
@@ -105,8 +106,10 @@ export function Queue({
                       alignItems="center"
                       spacing={2}
                     >
-                      <Typography variant="h5">{item.videoTitle}</Typography>
-                      <Typography>{item.channelTitle}</Typography>
+                      <Typography variant="h5">
+                        {items[item].videoTitle}
+                      </Typography>
+                      <Typography>{items[item].channelTitle}</Typography>
                     </Stack>
                   </Card>
                 </motion.div>
@@ -120,8 +123,8 @@ export function Queue({
                   justifyContent: "center",
                   alignItems: "center",
                 }}
-                initial={{ opacity: 0}}
-                animate={{ opacity: 1}}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
                 <Typography variant="h5">No items in queue</Typography>

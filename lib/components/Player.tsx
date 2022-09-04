@@ -1,22 +1,21 @@
 import { CircularProgress } from "@mui/material";
 import { getDatabase, ref, set } from "firebase/database";
-import { useEffect } from "react";
-import YouTube, { YouTubeProps } from "react-youtube";
+import { useEffect, useState } from "react";
+import YouTube, { YouTubePlayer, YouTubeProps } from "react-youtube";
 import { useRoom } from "../context";
 
 export function Player() {
   const {
     setPlaying,
-    setPlayer,
     setDuration,
     setTime,
     playing,
-    player,
     data,
     id,
     changing,
     setChanging,
-    volume
+    volume,
+    time,
   } = useRoom();
   const opts: YouTubeProps["opts"] = {
     height: window.innerHeight,
@@ -33,53 +32,61 @@ export function Player() {
   };
   const video = data?.child("video").child("videoId").val();
   const action = data?.child("video").child("action").val();
-  const time = data?.child("video").child("time").val();
+  const dbTime = data?.child("video").child("time").val();
+  const [player, setPlayer] = useState<YouTubePlayer>();
 
-  /**
-   * Keep user in sync with database time
-   */
   useEffect(() => {
-    if (player && playing) {
-      if (player.getCurrentTime() !== time) {
-        player.seekTo(time, true);
+    if (player) {
+      try {
+        if (playing) player.playVideo();
+        else player.pauseVideo();
+      } catch (error) {
+        console.log(error);
       }
     }
-  }, [time, player, playing]);
+  }, [player, playing]);
+
+  useEffect(() => {
+    if (player && volume) {
+      try {
+        player.setVolume(volume);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+  }, [player, volume]);
+
+  useEffect(() => {
+    if (player && playing) {
+      try {
+        if (player.getCurrentTime() !== dbTime) {
+          player.seekTo(dbTime, true);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    }
+  }, [dbTime, player, playing]);
 
   /**
    * Listen for action changes in database
    */
   useEffect(() => {
-    if (player) {
-      try {
-        switch (action) {
-          case "play":
-            !playing && player?.playVideo();
-            setChanging(false);
-            break;
-          case "pause":
-            playing && player?.pauseVideo();
-            setChanging(false);
-            break;
-          case "set":
-            setChanging(false);
-            setTimeout(() => {
-              set(
-                ref(getDatabase(), `rooms/${id}/video/time`),
-                player?.getCurrentTime() || 0
-              );
-            }, 500);
-            break;
-          case "next":
-            player?.pauseVideo();
-            setChanging(true);
-            break;
-        }
-      } catch (e) {
-        console.error(e);
-      }
+    switch (action) {
+      case "play":
+        setPlaying(true);
+        setChanging(false);
+        break;
+      case "pause":
+        setPlaying(false);
+        setChanging(false);
+        break;
+      case "next":
+        setPlaying(false);
+        setChanging(true);
+        break;
     }
-  }, [player, id, action, playing, setChanging]);
+  }, [id, action, playing, setChanging, setPlaying]);
 
   /**
    * Handle video player tracking
@@ -97,6 +104,16 @@ export function Player() {
       clearInterval(timer);
     };
   }, [player, playing, setTime, video]);
+
+  useEffect(() => {
+    if (player && !playing) {
+      try {
+        player.seekTo(time, true);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+  }, [player, playing, time])
 
   return video ? (
     changing ? (
@@ -118,7 +135,7 @@ export function Player() {
             transform: "translate(-50%, -50%)",
           }}
         >
-          <CircularProgress />
+          <CircularProgress sx={{ color: "white" }} />
         </div>
       </div>
     ) : (

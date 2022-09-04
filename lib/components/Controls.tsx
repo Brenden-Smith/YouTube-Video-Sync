@@ -17,6 +17,7 @@ import { formatTime } from "../helper";
 import { getDatabase, ref, set } from "firebase/database";
 import VolumeOffIcon from "@mui/icons-material/VolumeOff";
 import VolumeUpIcon from "@mui/icons-material/VolumeUp";
+import { Video } from "../models";
 
 export function Controls() {
   const {
@@ -24,7 +25,6 @@ export function Controls() {
     time,
     visible,
     playing,
-    player,
     setTime,
     id,
     data,
@@ -36,11 +36,12 @@ export function Controls() {
   } = useRoom();
 
   const video = data?.child("video").val();
+  const next: Video = Object.values(data?.child("queue").child("items").val() || {})[0] as Video || null;
 
   return (
     <AnimatePresence>
       <Stack alignItems="flex-end">
-        {video && duration - time < 15 && (
+        {next && duration - time < 15 && (
           <motion.div
             key="up-next"
             initial={{ opacity: 0, y: 50 }}
@@ -59,7 +60,7 @@ export function Controls() {
                   display: "flex",
                   justifyContent: "center",
                   alignItems: "center",
-                  backgroundImage: `url(${video?.videoThumbnail})`,
+                  backgroundImage: `url(${next.videoThumbnail})`,
                   backgroundSize: "cover",
                   backgroundPosition: "center",
                   marginRight: "15px",
@@ -97,7 +98,7 @@ export function Controls() {
                       <SkipNextIcon />
                     </IconButton>
                   </Box>
-                  <Typography variant="h6">{video?.videoTitle}</Typography>
+                  <Typography variant="h6">{next.videoTitle}</Typography>
                 </Stack>
               </Card>
             </ButtonBase>
@@ -118,9 +119,7 @@ export function Controls() {
           >
             <Stack direction="row" alignItems="center" spacing={1}>
               <IconButton
-                onClick={() => {
-                  playing ? player?.pauseVideo() : player?.playVideo();
-                }}
+                onClick={() => set(ref(getDatabase(), `rooms/${id}/video/action`), !playing ? "play" : "pause")}
               >
                 {playing ? (
                   <PauseIcon fontSize="large" />
@@ -134,12 +133,10 @@ export function Controls() {
                 value={time}
                 max={duration}
                 onChange={(e, value) => {
-                  player?.seekTo(value as number, true);
-                  player?.pauseVideo();
+                  playing && set(ref(getDatabase(), `rooms/${id}/video/action`), "pause");
                   setTime(value as number);
                 }}
                 onChangeCommitted={async (event, value) => {
-                  player?.seekTo(value as number, true);
                   set(
                     ref(getDatabase(), `rooms/${id}/video/time`),
                     value as number
@@ -150,15 +147,7 @@ export function Controls() {
               />
               <IconButton
                 disabled={changing || !video?.videoId}
-                onClick={() => {
-                  if (muted) {
-                    player?.unMute();
-                    setMuted(false);
-                  } else {
-                    player?.mute();
-                    setMuted(true);
-                  }
-                }}
+                onClick={() => setMuted(!muted)}
               >
                 {muted ? <VolumeOffIcon /> : <VolumeUpIcon />}
               </IconButton>
@@ -166,10 +155,7 @@ export function Controls() {
                   disabled={changing || !video?.videoId || muted}
                   max={100}
                   value={volume}
-                  onChange={(e, value) => {
-                    player?.setVolume(value as number);
-                    setVolume(value as number);
-                  }}
+                  onChange={(e, value) => setVolume(value as number)}
                   sx={{ width: "100px" }}
                 />
               <IconButton
