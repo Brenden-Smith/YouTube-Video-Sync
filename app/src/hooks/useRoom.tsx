@@ -32,14 +32,10 @@ export default function useRoom(player: RefObject<ReactPlayer>): {
     const s = new WebSocket(
       `${process.env.NEXT_PUBLIC_WEBSOCKET_URL}?room=${params.room}`
     );
-    s.addEventListener("open", () => {
-      console.log("connected");
-    });
     s.addEventListener("message", (event) => {
       const message: { event: string; data: any; user?: string } = JSON.parse(
         event.data
       );
-      console.log(message);
       switch (message.event) {
         case "room":
           setHost(message.data?.users[0] === message.user);
