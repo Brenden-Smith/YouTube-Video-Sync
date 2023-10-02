@@ -7,6 +7,22 @@ const nextConfig = {
     });
     return config;
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "i.ytimg.com",
+        port: "",
+        pathname: "/vi/**/*",
+      },
+      {
+        protocol: "https",
+        hostname: "yt3.ggpht.com",
+        port: "",
+      },
+    ],
+  },
+  output: "standalone"
 };
 
-module.exports = nextConfig
+module.exports = nextConfig;

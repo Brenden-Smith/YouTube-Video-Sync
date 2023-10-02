@@ -1,3 +1,5 @@
+import Room from "@/types/Room";
+import Video from "@/types/Video";
 import { useParams } from "next/navigation";
 import {
   Dispatch,
@@ -6,21 +8,21 @@ import {
   useEffect,
   useState,
 } from "react";
-import ReactPlayer from "react-player";
+import ReactPlayer from "react-player/lazy";
 import { Socket, io } from "socket.io-client";
 
 export default function useRoom(player: RefObject<ReactPlayer>): {
   socket: Socket | null;
   position: number;
   playing: boolean;
-  url: string | undefined;
+  queue: Video[];
+  setQueue: Dispatch<SetStateAction<Video[]>>;
   host: boolean;
   setPosition: Dispatch<SetStateAction<number>>;
   setPlaying: Dispatch<SetStateAction<boolean>>;
-  setUrl: Dispatch<SetStateAction<string | undefined>>;
 } {
+  const [queue, setQueue] = useState<Video[]>([]);
   const [host, setHost] = useState(false);
-  const [url, setUrl] = useState<string | undefined>();
   const [socket, setSocket] = useState<Socket | null>(null);
   const [position, setPosition] = useState(0);
   const [playing, setPlaying] = useState(true);
@@ -39,10 +41,17 @@ export default function useRoom(player: RefObject<ReactPlayer>): {
 
     // Define socket events
     s.on("position", (value: number, h: string) => {
-      if (h !== s.id && Math.abs((player.current?.getCurrentTime() ?? 0) - value) > 0.3) {
+      if (
+        h !== s.id &&
+        Math.abs((player.current?.getCurrentTime() ?? 0) - value) > 0.3
+      ) {
         player.current?.seekTo(value);
         setPosition(value);
       }
+    });
+    s.on("room", (room: Room) => {
+      setHost(room.users[0] === s.id);
+      setQueue(room.queue);
     });
     s.on("play", () => setPlaying(true));
     s.on("pause", () => setPlaying(false));
@@ -50,7 +59,10 @@ export default function useRoom(player: RefObject<ReactPlayer>): {
       player.current?.seekTo(value);
       setPosition(value);
     });
-    s.on("url", (value: string) => setUrl(value));
+    s.on("queue_update", (value: Video[]) => {
+      setQueue(value);
+      console.log(value);
+    });
     s.on("host", (h: string) => setHost(h === s.id));
     s.on("connect_error", () => fetch("/api/socket"));
 
@@ -61,16 +73,16 @@ export default function useRoom(player: RefObject<ReactPlayer>): {
     return () => {
       s.disconnect();
     };
-  }, [params.room, player, setPosition, setPlaying, setUrl]);
+  }, [params.room, player, setPosition, setPlaying]);
 
   return {
     socket,
     position,
     playing,
-    url,
+    queue,
     host,
     setPosition,
     setPlaying,
-    setUrl,
+    setQueue,
   };
 }

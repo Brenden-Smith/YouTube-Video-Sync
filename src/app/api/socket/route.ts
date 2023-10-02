@@ -1,11 +1,7 @@
+import Room from "@/types/Room";
+import Video from "@/types/Video";
+import { NextResponse } from "next/server";
 import { Server } from "socket.io";
-
-type Room = {
-  url: string;
-  title: string;
-  position: number;
-  users: string[];
-};
 
 const rooms: { [key: string]: Room } = {};
 
@@ -37,10 +33,10 @@ export function GET(req: any, res: any) {
 
     if (!rooms[room]) {
       rooms[room] = {
-        url: "",
-        title: "",
-        position: 0,
         users: [],
+        queue: [],
+        position: 0,
+        skipCooldown: false,
       };
     }
     socket.join(room);
@@ -54,8 +50,7 @@ export function GET(req: any, res: any) {
       "users"
     );
 
-    io.in(room).emit("host", rooms[room].users[0]);
-    io.in(room).emit("url", rooms[room].url);
+    io.in(room).emit("room", rooms[room]);
 
     socket.on("play", () => {
       console.log("User:", socket.id, "Action: Play Room:", room);
@@ -79,10 +74,28 @@ export function GET(req: any, res: any) {
       _socket.broadcast.emit("seek", time);
     });
 
-    socket.on("url", (url) => {
-      console.log("User:", socket.id, "Action: URL Value:", url, "Room:", room);
-      rooms[room].url = url;
-      _socket.to(room).emit("url", url);
+    socket.on("queue_update", (queue: Video[]) => {
+      console.log(
+        "User:",
+        socket.id,
+        "Action: Update Queue:",
+        queue,
+        "Room:",
+        room
+      );
+      rooms[room].queue = queue;
+      io.in(room).emit("queue_update", queue);
+    });
+
+    socket.on("queue_next", () => {
+      if (rooms[room].skipCooldown) return;
+      console.log("User:", socket.id, "Action: Next Queue:", "Room:", room);
+      rooms[room].queue.shift();
+      io.in(room).emit("queue_update", rooms[room].queue);
+      rooms[room].skipCooldown = true;
+      setTimeout(() => {
+        rooms[room].skipCooldown = false;
+      }, 5000);
     });
 
     socket.on("position", (position) => {
@@ -102,7 +115,9 @@ export function GET(req: any, res: any) {
 
     socket.on("disconnect", () => {
       socket.leave(room);
-      rooms[room].users = rooms[room].users.filter((id) => id !== socket.id);
+      rooms[room].users = rooms[room].users.filter(
+        (id: string) => id !== socket.id
+      );
       console.log(
         socket.id,
         "left room",
@@ -114,10 +129,16 @@ export function GET(req: any, res: any) {
     });
   });
 
+  if (!res.socket) res.socket = {};
+  if (!res.socket.server) res.socket.server = {};
   res.socket.server.io = io;
-  res.status(201).json({
-    success: true,
-    message: "Socket is started",
-    socket: `:${3001}`,
-  });
+
+  return NextResponse.json(
+    {
+      success: true,
+      message: "Socket is started",
+      socket: `:${3001}`,
+    },
+    { status: 201 }
+  );
 }
