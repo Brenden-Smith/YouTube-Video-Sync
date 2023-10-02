@@ -14,11 +14,10 @@ import ReactPlayer from "react-player/lazy";
 import Player from "./Player";
 import Footer from "./Footer";
 import HUD from "./HUD";
-import { Socket } from "socket.io-client";
 
 type RoomContextType = {
   player: RefObject<ReactPlayer>;
-  socket: Socket | null;
+  socket: WebSocket | null;
   host: boolean;
 };
 
@@ -37,14 +36,28 @@ export default function Content() {
   const [hover, setHover] = useState(false);
 
   const player = useRef<ReactPlayer>(null);
-  const { socket, playing, queue, setPlaying, position, setPosition, host, setQueue } =
-    useRoom(player);
-  const url = useMemo(() => queue ? queue[0]?.videoUrl : '', [queue]);
+  const {
+    socket,
+    playing,
+    queue,
+    setPlaying,
+    position,
+    setPosition,
+    host,
+    setQueue,
+  } = useRoom(player);
+  const url = useMemo(() => (queue ? queue[0]?.videoUrl : ""), [queue]);
 
   useEffect(() => {
     const interval = setInterval(() => {
       playing && setPosition(player.current?.getCurrentTime() ?? 0);
-      host && socket?.emit("position", player.current?.getCurrentTime());
+      host &&
+        socket?.send(
+          JSON.stringify({
+            event: "position",
+            data: player.current?.getCurrentTime(),
+          })
+        );
       setDuration(player.current?.getDuration() ?? 0);
     }, 1000);
     return () => clearInterval(interval);
@@ -60,10 +73,9 @@ export default function Content() {
   }, []);
 
   useEffect(() => {
-    if (host && position >= duration - 1) {
-      socket?.emit("queue_next");
-    }
-  }, [position, duration, host, socket])
+    if (host && position >= duration - 1)
+      socket?.send(JSON.stringify({ event: "queue_next" }));
+  }, [position, duration, host, socket]);
 
   return (
     <RoomContext.Provider
@@ -74,7 +86,7 @@ export default function Content() {
       }}
     >
       <Player url={url} playing={playing} volume={volume} muted={muted} />
-      <HUD hover={hover} queue={queue} setQueue={setQueue}/>
+      <HUD hover={hover} queue={queue} setQueue={setQueue} />
       <Footer
         duration={duration}
         hover={hover}

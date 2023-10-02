@@ -41,7 +41,9 @@ export default function Queue({ queue, open, setOpen, setQueue }: QueueProps) {
     })
       .then(async (res) => {
         const json = await res.json();
-        socket?.emit("queue_update", [...queue, json]);
+        socket?.send(
+          JSON.stringify({ event: "queue_update", data: [...queue, json] })
+        );
       })
       .catch((err) => console.error(err));
     setLoading(false);
@@ -50,9 +52,11 @@ export default function Queue({ queue, open, setOpen, setQueue }: QueueProps) {
 
   const removeFromQueue = useCallback(
     (i: number) => {
-      socket?.emit(
-        "queue_update",
-        queue.filter((_, index) => index !== i)
+      socket?.send(
+        JSON.stringify({
+          event: "queue_update",
+          data: queue.filter((_, index) => index !== i),
+        })
       );
     },
     [socket, queue]
@@ -60,7 +64,7 @@ export default function Queue({ queue, open, setOpen, setQueue }: QueueProps) {
 
   const updateQueue = useCallback(
     (newQueue: Video[]) => {
-      socket?.emit("queue_update", newQueue);
+      socket?.send(JSON.stringify({ event: "queue_update", data: newQueue }));
     },
     [socket]
   );

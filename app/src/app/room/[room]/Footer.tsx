@@ -55,12 +55,17 @@ export default function Footer({
     (event: ChangeEvent<HTMLInputElement>) => {
       setPosition(parseInt(event.target.value));
       player.current?.seekTo(parseInt(event.target.value));
-      socket?.emit("seek", parseInt(event.target.value));
-      playing && socket?.emit("pause");
+      socket?.send(
+        JSON.stringify({ event: "seek", data: parseInt(event.target.value) })
+      );
+      playing && socket?.send(JSON.stringify({ event: "pause" }));
     },
     [socket, playing, player, setPosition]
   );
-  const skip = useCallback(() => socket?.emit("queue_next"), [socket]);
+  const skip = useCallback(
+    () => socket?.send(JSON.stringify({ event: "queue_next" })),
+    [socket]
+  );
 
   return (
     <>

@@ -1,6 +1,5 @@
-import { RefObject, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import ReactPlayer from "react-player";
-import { Socket } from "socket.io-client";
 import { useRoomContext } from "./content";
 
 type PlayerProps = {
@@ -10,16 +9,17 @@ type PlayerProps = {
   muted: boolean;
 };
 
-export default function Player({
-  url,
-  playing,
-  volume,
-  muted,
-}: PlayerProps) {
+export default function Player({ url, playing, volume, muted }: PlayerProps) {
   const { socket, player } = useRoomContext();
   const [mounted, setMounted] = useState(false);
-  const onPlay = useCallback(() => socket?.emit("play"), [socket]);
-  const onPause = useCallback(() => socket?.emit("pause"), [socket]);
+  const onPlay = useCallback(
+    () => socket?.send(JSON.stringify({ event: "play" })),
+    [socket]
+  );
+  const onPause = useCallback(
+    () => socket?.send(JSON.stringify({ event: "pause" })),
+    [socket]
+  );
 
   useEffect(() => {
     setMounted(true);

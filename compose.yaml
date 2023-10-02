@@ -1,0 +1,11 @@
+services:
+  app:
+    build: ./app
+    ports: 
+      - 3000:3000
+    environment:
+      NEXT_PUBLIC_WEBSOCKET_URL: ws://websocket
+  websocket:
+    build: ./websocket
+    ports: 
+      - 3001:3001

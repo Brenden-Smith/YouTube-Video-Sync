@@ -1,0 +1,17 @@
+{
+  "name": "sink-websocket",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@faker-js/faker": "^8.1.0",
+    "bun-types": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "scripts": {
+    "build": "docker build -t sink-websocket .",
+    "start": "docker run -p 3001:3001 sink-websocket",
+    "test": "jest"
+  }
+}
